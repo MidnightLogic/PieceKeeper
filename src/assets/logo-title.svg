@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 380 50">
+  <!-- Key-round icon (inline, vertically centered with text) -->
+  <g transform="translate(68, 5)" stroke="#2563eb" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z" transform="scale(1.6)"/>
+    <circle cx="26.4" cy="12" r=".8" fill="#2563eb"/>
+  </g>
+  <!-- Title text with small TM -->
+  <text font-family="ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" fill="#2563eb">
+    <tspan x="115" y="37" font-size="34" font-weight="700">PieceKeeper</tspan><tspan dy="-14" font-size="14" font-weight="400">™</tspan>
+  </text>
+</svg>

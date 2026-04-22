@@ -1,6 +1,5 @@
 <div align="center">
-  <img src="https://raw.githubusercontent.com/lucide-icons/lucide/main/icons/key-round.svg" width="80" height="80" alt="PieceKeeper Logo">
-  <h1>PieceKeeper™</h1>
+  <img src="src/assets/logo-title.svg" width="420" alt="PieceKeeper">
   <p><strong>Distribute secrets. Eliminate single points of failure.</strong></p>
   <p>An offline-first implementation of <a href="https://en.wikipedia.org/wiki/Shamir%27s_secret_sharing">Shamir's Secret Sharing</a>, compiled into a single HTML file.</p>
 
@@ -17,6 +16,11 @@ PieceKeeper allows you to take a sensitive secret—like a master password, cryp
 Shares can be distributed as printable **QR codes**, written to **NFC tags**, or saved as plain **text**. An optional two-factor password adds a second layer of protection so that physical possession of shares alone is not sufficient to decode the secret.
 
 The entire application compiles into a **single, self-contained HTML file** with no external dependencies and zero network requests.
+
+<div align="center">
+  <img src="src/assets/demo.gif" alt="PieceKeeper Demo" width="360">
+  <p><em>Generate shares, scan QR codes, and reconstruct secrets — all offline.</em></p>
+</div>
 
 ---
 
