@@ -237,6 +237,8 @@ npm run preview:tunnel
 
 This starts a local server and creates a temporary HTTPS tunnel, allowing you to test on mobile devices over your local network.
 
+Note: Because the application is configured for GitHub Pages routing, you must append /PieceKeeper/ to the end of the temporary tunnel URL provided in your terminal (e.g., https://<your-tunnel-url>/PieceKeeper/).
+
 
 
 ## 📜 License

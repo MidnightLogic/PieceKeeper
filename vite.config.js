@@ -10,6 +10,7 @@ export default defineConfig(() => {
     const isTunnelMode = process.env.TUNNEL === 'true';
 
     return {
+        base: '/PieceKeeper/',
         define: {
             __APP_VERSION__: JSON.stringify(pkg.version)
         },
