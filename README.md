@@ -24,7 +24,7 @@ The entire application compiles into a **single, self-contained HTML file** with
 
 A pre-compiled deployment is available via GitHub Pages:
 
-**[Launch PieceKeeper →](https://midnightlogic.github.io/PieceKeeper/)**
+<a href="https://midnightlogic.github.io/PieceKeeper/" target="_blank" rel="noopener noreferrer"><strong>Launch PieceKeeper →</strong></a>
 
 > Once loaded over HTTPS, install PieceKeeper as a **Progressive Web App (PWA)** from the Settings tab. This decouples it from the browser and enables offline access from your device's home screen.
 
