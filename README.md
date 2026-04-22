@@ -19,7 +19,7 @@ The entire application compiles into a **single, self-contained HTML file** with
 
 <div align="center">
   <img src="src/assets/demo.gif" alt="PieceKeeper Demo" width="360">
-  <p><em>Generate shares, scan QR codes, and reconstruct secrets — all offline.</em></p>
+  <p><em>Generate shares, scan QR codes & NFC tags, and reconstruct secrets — all offline.</em></p>
 </div>
 
 ---
