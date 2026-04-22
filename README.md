@@ -18,7 +18,7 @@ Shares can be distributed as printable **QR codes**, written to **NFC tags**, or
 The entire application compiles into a **single, self-contained HTML file** with no external dependencies and zero network requests.
 
 <div align="center">
-  <img src="src/assets/demo.gif" alt="PieceKeeper Demo" width="360">
+  <img src="src/assets/demo.gif" alt="PieceKeeper Demo">
   <p><em>Generate shares, scan QR codes & NFC tags, and reconstruct secrets — all offline.</em></p>
 </div>
 
