@@ -173,7 +173,7 @@ After every cryptographic operation, all intermediate byte arrays (`passwordByte
 *   **Print-Ready PDF Layout:** One-click printing with share metadata, QR codes, and instructions formatted for A4 paper.
 *   **21 Languages:** Fully internationalized interface covering English, Spanish, French, German, Italian, Dutch, Polish, Portuguese, Russian, Turkish, Arabic, Hindi, Bengali, Thai, Vietnamese, Indonesian, Japanese, Korean, Hebrew, and Chinese (Simplified + Traditional).
 *   **Progressive Web App:** Installable on iOS and Android as a standalone application with full offline capability.
-*   **Dark Mode, Audio Feedback, RTL Support:** Configurable theme, optional UI sounds, and right-to-left layout for Arabic and Hebrew.
+*   **Dark Mode, Audio Feedback, Haptic Feedback, RTL Support:** Configurable theme, optional UI sounds, haptic feedback, and right-to-left layout for Arabic and Hebrew.
 *   **Desktop Width Toggle:** Switchable between compact app-like layout and wide desktop layout, with preference persistence.
 *   **Built-in Diagnostic Suite:** Run internal cryptographic self-tests to verify your device's compatibility before generating shares.
 
