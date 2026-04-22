@@ -1,0 +1,1906 @@
+<!DOCTYPE html>
+<html lang="en" translate="no">
+
+<head>
+  <meta name="google" content="notranslate" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="referrer" content="no-referrer">
+  <meta http-equiv="x-dns-prefetch-control" content="off">
+  <meta http-equiv="Content-Security-Policy"
+    content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval' __VITE_SCRIPT_HASH__; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob:; connect-src 'self' data:; object-src 'none'; form-action 'none'; base-uri 'none'; frame-ancestors 'none';">
+  <title>PieceKeeper</title>
+  <meta name="theme-color" content="#2563eb">
+  <link rel="manifest" href="manifest.json">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="stylesheet" href="./css/style.css">
+  <script>
+    // Immediately set the theme on page load to prevent FOUC
+    (function () {
+      const theme = localStorage.getItem('theme') || 'light'; // Default to light
+      if (theme === 'dark') {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+    })();
+  </script>
+  <link rel="apple-touch-icon" href="/apple-icon-180.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <link rel="icon" href="data:,">
+  <link rel="apple-touch-startup-image" href="/apple-splash-2048-2732.jpg"
+    media="(device-width: 1024px) and (device-height: 1366px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)">
+  <link rel="apple-touch-startup-image" href="/apple-splash-2732-2048.jpg"
+    media="(device-width: 1024px) and (device-height: 1366px) and (-webkit-device-pixel-ratio: 2) and (orientation: landscape)">
+  <link rel="apple-touch-startup-image" href="/apple-splash-1668-2388.jpg"
+    media="(device-width: 834px) and (device-height: 1194px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)">
+  <link rel="apple-touch-startup-image" href="/apple-splash-2388-1668.jpg"
+    media="(device-width: 834px) and (device-height: 1194px) and (-webkit-device-pixel-ratio: 2) and (orientation: landscape)">
+  <link rel="apple-touch-startup-image" href="/apple-splash-1536-2048.jpg"
+    media="(device-width: 768px) and (device-height: 1024px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)">
+  <link rel="apple-touch-startup-image" href="/apple-splash-2048-1536.jpg"
+    media="(device-width: 768px) and (device-height: 1024px) and (-webkit-device-pixel-ratio: 2) and (orientation: landscape)">
+  <link rel="apple-touch-startup-image" href="/apple-splash-1640-2360.jpg"
+    media="(device-width: 820px) and (device-height: 1180px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)">
+  <link rel="apple-touch-startup-image" href="/apple-splash-2360-1640.jpg"
+    media="(device-width: 820px) and (device-height: 1180px) and (-webkit-device-pixel-ratio: 2) and (orientation: landscape)">
+  <link rel="apple-touch-startup-image" href="/apple-splash-1668-2224.jpg"
+    media="(device-width: 834px) and (device-height: 1112px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)">
+  <link rel="apple-touch-startup-image" href="/apple-splash-2224-1668.jpg"
+    media="(device-width: 834px) and (device-height: 1112px) and (-webkit-device-pixel-ratio: 2) and (orientation: landscape)">
+  <link rel="apple-touch-startup-image" href="/apple-splash-1620-2160.jpg"
+    media="(device-width: 810px) and (device-height: 1080px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)">
+  <link rel="apple-touch-startup-image" href="/apple-splash-2160-1620.jpg"
+    media="(device-width: 810px) and (device-height: 1080px) and (-webkit-device-pixel-ratio: 2) and (orientation: landscape)">
+  <link rel="apple-touch-startup-image" href="/apple-splash-1488-2266.jpg"
+    media="(device-width: 744px) and (device-height: 1133px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)">
+  <link rel="apple-touch-startup-image" href="/apple-splash-2266-1488.jpg"
+    media="(device-width: 744px) and (device-height: 1133px) and (-webkit-device-pixel-ratio: 2) and (orientation: landscape)">
+  <link rel="apple-touch-startup-image" href="/apple-splash-1320-2868.jpg"
+    media="(device-width: 440px) and (device-height: 956px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
+  <link rel="apple-touch-startup-image" href="/apple-splash-2868-1320.jpg"
+    media="(device-width: 440px) and (device-height: 956px) and (-webkit-device-pixel-ratio: 3) and (orientation: landscape)">
+  <link rel="apple-touch-startup-image" href="/apple-splash-1206-2622.jpg"
+    media="(device-width: 402px) and (device-height: 874px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
+  <link rel="apple-touch-startup-image" href="/apple-splash-2622-1206.jpg"
+    media="(device-width: 402px) and (device-height: 874px) and (-webkit-device-pixel-ratio: 3) and (orientation: landscape)">
+  <link rel="apple-touch-startup-image" href="/apple-splash-1260-2736.jpg"
+    media="(device-width: 420px) and (device-height: 912px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
+  <link rel="apple-touch-startup-image" href="/apple-splash-2736-1260.jpg"
+    media="(device-width: 420px) and (device-height: 912px) and (-webkit-device-pixel-ratio: 3) and (orientation: landscape)">
+  <link rel="apple-touch-startup-image" href="/apple-splash-1290-2796.jpg"
+    media="(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
+  <link rel="apple-touch-startup-image" href="/apple-splash-2796-1290.jpg"
+    media="(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3) and (orientation: landscape)">
+  <link rel="apple-touch-startup-image" href="/apple-splash-1179-2556.jpg"
+    media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
+  <link rel="apple-touch-startup-image" href="/apple-splash-2556-1179.jpg"
+    media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: landscape)">
+  <link rel="apple-touch-startup-image" href="/apple-splash-1170-2532.jpg"
+    media="(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
+  <link rel="apple-touch-startup-image" href="/apple-splash-2532-1170.jpg"
+    media="(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3) and (orientation: landscape)">
+  <link rel="apple-touch-startup-image" href="/apple-splash-1284-2778.jpg"
+    media="(device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
+  <link rel="apple-touch-startup-image" href="/apple-splash-2778-1284.jpg"
+    media="(device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3) and (orientation: landscape)">
+  <link rel="apple-touch-startup-image" href="/apple-splash-1125-2436.jpg"
+    media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
+  <link rel="apple-touch-startup-image" href="/apple-splash-2436-1125.jpg"
+    media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3) and (orientation: landscape)">
+  <link rel="apple-touch-startup-image" href="/apple-splash-1242-2688.jpg"
+    media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
+  <link rel="apple-touch-startup-image" href="/apple-splash-2688-1242.jpg"
+    media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 3) and (orientation: landscape)">
+  <link rel="apple-touch-startup-image" href="/apple-splash-828-1792.jpg"
+    media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)">
+  <link rel="apple-touch-startup-image" href="/apple-splash-1792-828.jpg"
+    media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2) and (orientation: landscape)">
+  <link rel="apple-touch-startup-image" href="/apple-splash-1242-2208.jpg"
+    media="(device-width: 414px) and (device-height: 736px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
+  <link rel="apple-touch-startup-image" href="/apple-splash-2208-1242.jpg"
+    media="(device-width: 414px) and (device-height: 736px) and (-webkit-device-pixel-ratio: 3) and (orientation: landscape)">
+  <link rel="apple-touch-startup-image" href="/apple-splash-750-1334.jpg"
+    media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)">
+  <link rel="apple-touch-startup-image" href="/apple-splash-1334-750.jpg"
+    media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2) and (orientation: landscape)">
+  <link rel="apple-touch-startup-image" href="/apple-splash-640-1136.jpg"
+    media="(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)">
+  <link rel="apple-touch-startup-image" href="/apple-splash-1136-640.jpg"
+    media="(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2) and (orientation: landscape)">
+  <style>
+    /* Hide scrollbar on app shell while preserving scroll */
+    #app-shell { -ms-overflow-style: none; scrollbar-width: none; }
+    #app-shell::-webkit-scrollbar { display: none; }
+  </style>
+</head>
+
+<body
+  class="bg-slate-50 dark:bg-slate-900 md:bg-slate-200 md:dark:bg-slate-950 text-slate-800 dark:text-slate-200 min-h-screen transition-colors duration-300 md:overflow-hidden">
+  <!-- App Shell Container -->
+  <div id="app-shell" class="max-w-xl mx-auto md:border md:border-slate-300 md:dark:border-slate-700 md:shadow-2xl md:rounded-xl md:mt-6 md:mb-6 md:h-[calc(100vh-3rem)] md:overflow-y-auto md:relative bg-slate-50 dark:bg-slate-900">
+  <nav
+    class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md shadow-sm border-b border-slate-200 dark:border-slate-800 sticky top-0 z-40 md:rounded-t-xl">
+    <div class="container mx-auto px-4 py-2 md:py-3 flex justify-between items-center">
+      <a class="text-lg md:text-xl font-bold text-blue-600 dark:text-blue-400 flex items-center gap-2" href="#"
+        data-i18n="nav.title">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+          class="lucide lucide-key-round-icon lucide-key-round">
+          <path
+            d="M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z">
+          </path>
+          <circle cx="16.5" cy="7.5" r=".5" fill="currentColor"></circle>
+        </svg>
+        PieceKeeper
+      </a>
+      <div class="flex items-center space-x-2">
+
+        <button id="width-toggle" title="Toggle Width"
+          class="hidden md:inline-flex hover:-translate-y-0.5 active:scale-95 transition-all duration-200 p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400">
+          <!-- Maximize icon (default: app is narrow) -->
+          <svg id="width-icon-expand" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 3 21 3 21 9"></polyline>
+            <polyline points="9 21 3 21 3 15"></polyline>
+            <line x1="21" y1="3" x2="14" y2="10"></line>
+            <line x1="3" y1="21" x2="10" y2="14"></line>
+          </svg>
+          <!-- Minimize icon (when app is wide) -->
+          <svg id="width-icon-shrink" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="hidden">
+            <polyline points="4 14 10 14 10 20"></polyline>
+            <polyline points="20 10 14 10 14 4"></polyline>
+            <line x1="14" y1="10" x2="21" y2="3"></line>
+            <line x1="3" y1="21" x2="10" y2="14"></line>
+          </svg>
+        </button>
+
+        <button id="theme-toggle" title="Toggle Theme"
+          class="hover:-translate-y-0.5 active:scale-95 transition-all duration-200 p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400">
+          <!-- Sun icon — visible in dark mode (click to go light) -->
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+            class="lucide lucide-sun hidden dark:block">
+            <circle cx="12" cy="12" r="4"></circle>
+            <path d="M12 2v2"></path>
+            <path d="M12 20v2"></path>
+            <path d="m4.93 4.93 1.41 1.41"></path>
+            <path d="m17.66 17.66 1.41 1.41"></path>
+            <path d="M2 12h2"></path>
+            <path d="M20 12h2"></path>
+            <path d="m6.34 17.66-1.41 1.41"></path>
+            <path d="m19.07 4.93-1.41 1.41"></path>
+          </svg>
+          <!-- Moon icon — visible in light mode (click to go dark) -->
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+            class="lucide lucide-moon block dark:hidden">
+            <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </nav>
+  <div class="px-2 sm:px-4 py-2 mt-1 pb-20">
+    <div class="tab-content">
+      <div class="tab-pane transition-opacity duration-300 ease-in-out active" id="generate">
+        <div
+          class="w-full p-3 md:p-4 transition-all">
+
+          <form autocomplete="off" onsubmit="return false;" data-form-type="other">
+          <div class="space-y-3">
+            <div>
+              <div class="flex justify-between items-end mb-1">
+                <label for="gen-password" class="block text-sm font-medium text-slate-700 dark:text-slate-300"
+                  data-i18n="generate.secret_label">Secret</label>
+                <span id="gen-password-char-count" class="text-xs text-slate-500 dark:text-slate-400"></span>
+              </div>
+              <div class="relative rounded-md shadow-sm">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-slate-400" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z">
+                    </path>
+                  </svg>
+                </div>
+                <input type="password" autocomplete="off" data-lpignore="true" data-1p-ignore="true" data-form-type="other"
+                  spellcheck="false" id="gen-password" placeholder="Secret text to split"
+                  class="w-full pl-10 pr-10 py-2 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-700 dark:text-slate-100 transition-colors"
+                  data-i18n="generate.secret_placeholder">
+                <button type="button"
+                  class="password-toggle absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 cursor-pointer focus:outline-none"
+                  data-target="gen-password">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z">
+                    </path>
+                  </svg>
+                </button>
+
+              </div>
+            </div>
+            <div>
+              <label for="gen-confirm-password"
+                class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1"
+                data-i18n="generate.confirm_label">Confirm Secret
+                Text</label>
+              <div class="relative rounded-md shadow-sm">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-slate-400" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                  </svg>
+                </div>
+                <input type="password" autocomplete="off" data-lpignore="true" data-1p-ignore="true" data-form-type="other"
+                  spellcheck="false" id="gen-confirm-password" placeholder="Confirm secret text"
+                  class="w-full pl-10 pr-10 py-2 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-700 dark:text-slate-100 transition-colors"
+                  data-i18n="generate.confirm_placeholder">
+                <button type="button"
+                  class="password-toggle absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 cursor-pointer focus:outline-none"
+                  data-target="gen-confirm-password">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z">
+                    </path>
+                  </svg>
+                </button>
+              </div>
+              <small id="gen-confirm-password-error" class="text-xs text-red-500 dark:text-red-400 mt-1 hidden"
+                data-i18n="generate.password_error_match">Passwords do not
+                match.</small>
+            </div>
+            <div>
+              <div class="flex justify-between items-end mb-1">
+                <label for="gen-comment" class="block text-sm font-medium text-slate-700 dark:text-slate-300"
+                  data-i18n="generate.comment_label">Comment/Note (Optional, Max 32 chars)</label>
+                <span id="gen-comment-char-count" class="text-xs text-slate-500 dark:text-slate-400"></span>
+              </div>
+              <div class="relative rounded-md shadow-sm">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-slate-400" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z">
+                    </path>
+                  </svg>
+                </div>
+                <input type="text" id="gen-comment" placeholder="Add a comment/note for these shares" maxlength="32"
+                  class="w-full pl-10 px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-700 dark:text-slate-100 transition-colors"
+                  data-i18n="generate.comment_placeholder">
+
+              </div>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label for="gen-n" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1"><span
+                    data-i18n="generate.shares_label">Total Shares (N)</span></label>
+                <div class="relative rounded-md shadow-sm">
+                  <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-slate-400" fill="none"
+                      viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z">
+                      </path>
+                    </svg>
+                  </div>
+                  <input type="number" id="gen-n" min="1" max="64" placeholder="e.g., 5"
+                    data-i18n="generate.shares_placeholder"
+                    class="w-full pl-10 px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-700 dark:text-slate-100 transition-colors">
+                </div>
+                <small id="gen-n-error" class="text-xs text-red-500 dark:text-red-400 mt-1 hidden"></small>
+              </div>
+              <div>
+                <label for="gen-k" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1"><span
+                    data-i18n="generate.min_shares_label">Threshold (K)</span></label>
+                <div class="relative rounded-md shadow-sm">
+                  <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-slate-400" fill="none"
+                      viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z">
+                      </path>
+                    </svg>
+                  </div>
+                  <input type="number" id="gen-k" min="1" max="64" placeholder="e.g., 3"
+                    data-i18n="generate.min_shares_placeholder"
+                    class="w-full pl-10 px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-700 dark:text-slate-100 transition-colors">
+                </div>
+                <small id="gen-k-error" class="text-xs text-red-500 dark:text-red-400 mt-1 hidden"></small>
+                <p id="k-note" class="text-xs text-yellow-500 dark:text-yellow-400 mt-1 hidden"></p>
+              </div>
+            </div>
+            <div
+              class="mt-4 p-4 border border-slate-200 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800 shadow">
+              <div class="flex items-center justify-between">
+                <h3 class="text-md font-semibold text-slate-800 dark:text-slate-200 flex items-center"
+                  data-i18n="generate.password_encryption">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                    class="lucide lucide-shield-lock mr-2 text-sky-600 dark:text-sky-400">
+                    <path
+                      d="M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z">
+                    </path>
+                    <circle cx="16.5" cy="7.5" r=".5" fill="currentColor"></circle>
+                  </svg>
+                  Optional Password Encryption
+                </h3>
+                <label class="relative inline-flex items-center cursor-pointer">
+                  <input type="checkbox" id="gen-encrypt-toggle" class="sr-only peer">
+                  <div
+                    class="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-600 peer-checked:bg-blue-600">
+                  </div>
+                </label>
+              </div>
+              <div id="gen-encrypt-container" class="hidden mt-4 space-y-4">
+                <div>
+                  <label for="gen-encrypt-key" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1"
+                    data-i18n="generate.password_label">Encryption
+                    Password (Max 256 chars)</label>
+                  <div class="relative rounded-md shadow-sm">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-slate-400" fill="none"
+                        viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z">
+                        </path>
+                      </svg>
+                    </div>
+                    <input type="password" autocomplete="off" data-lpignore="true" data-1p-ignore="true" data-form-type="other"
+                      spellcheck="false" id="gen-encrypt-key" placeholder="Optional 2FA Pass" maxlength="256"
+                      class="w-full pl-10 pr-10 py-2 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-700 dark:text-slate-100 transition-colors"
+                      data-i18n="generate.password_placeholder">
+                    <button type="button"
+                      class="password-toggle absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 cursor-pointer focus:outline-none"
+                      data-target="gen-encrypt-key">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z">
+                        </path>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+                <div id="gen-encrypt-strength-container" class="mt-1">
+                  <div id="gen-encrypt-strength-bar-bg"
+                    class="w-full h-2 bg-slate-200 dark:bg-slate-600 rounded-full overflow-hidden">
+                    <div id="gen-encrypt-strength-bar"
+                      class="h-full rounded-full transition-all duration-300 ease-in-out" style="width: 0%;"></div>
+                  </div>
+                  <small id="gen-encrypt-strength-text" class="block text-xs mt-1"></small>
+                </div>
+                <div>
+                  <label for="gen-confirm-encrypt-key"
+                    class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1"
+                    data-i18n="generate.password_confirm">Confirm
+                    Encryption Password</label>
+                  <div class="relative rounded-md shadow-sm">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-slate-400" fill="none"
+                        viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                      </svg>
+                    </div>
+                    <input type="password" autocomplete="off" data-lpignore="true" data-1p-ignore="true" data-form-type="other"
+                      spellcheck="false" id="gen-confirm-encrypt-key" placeholder="Optional 2FA Confirm"
+                      data-i18n="generate.password_confirm_placeholder" maxlength="32"
+                      class="w-full pl-10 pr-10 py-2 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-700 dark:text-slate-100 transition-colors">
+                    <button type="button"
+                      class="password-toggle absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 cursor-pointer focus:outline-none"
+                      data-target="gen-confirm-encrypt-key">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z">
+                        </path>
+                      </svg>
+                    </button>
+                  </div>
+                  <small id="gen-confirm-encrypt-key-error" class="text-xs text-red-500 dark:text-red-400 mt-1 hidden"
+                    data-i18n="generate.password_error_match">Encryption passwords
+                    do not match.</small>
+                </div>
+                <small class="block text-xs text-slate-500 dark:text-slate-400 mt-3"
+                  data-i18n="generate.password_hint_desc">If enabled, this password provides an
+                  additional layer of security. It must be confirmed and will be required during
+                  reconstruction.</small>
+              </div>
+            </div>
+
+            <!-- Advanced Options Pane -->
+            <div class="mt-4">
+              <button type="button" id="gen-advanced-toggle"
+                class="flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition-colors group">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                  class="transition-transform duration-200" id="gen-advanced-chevron">
+                  <path d="m9 18 6-6-6-6"/>
+                </svg>
+                <span data-i18n="generate.advanced_options">Advanced Options</span>
+              </button>
+              <div id="gen-advanced-container" class="hidden mt-3 p-4 border border-slate-200 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800 shadow">
+                <div class="flex items-center justify-between">
+                  <div class="pr-4">
+                    <h4 class="text-sm font-semibold text-slate-800 dark:text-slate-200 flex items-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                        class="mr-1.5 text-violet-500 dark:text-violet-400 shrink-0">
+                        <rect width="18" height="18" x="3" y="3" rx="2"/>
+                        <path d="M3 9h18"/><path d="M3 15h18"/><path d="M9 3v18"/><path d="M15 3v18"/>
+                      </svg>
+                      <span data-i18n="generate.stealth_label">Uniform Padding (Stealth Mode)</span>
+                    </h4>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-1"
+                      data-i18n="generate.stealth_desc">Pads all shares to maximum size. Hides secret length from observers.</p>
+                  </div>
+                  <label class="relative inline-flex items-center cursor-pointer shrink-0">
+                    <input type="checkbox" id="gen-stealth-toggle" class="sr-only peer">
+                    <div
+                      class="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-violet-300 dark:peer-focus:ring-violet-800 rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-600 peer-checked:bg-violet-600">
+                    </div>
+                  </label>
+                </div>
+              </div>
+            </div>
+            <div class="mt-6 grid grid-cols-2 gap-3">
+              <button type="button" id="gen-clear-form-button"
+                class="hover:-translate-y-0.5 active:scale-95 transition-all duration-200 w-full inline-flex justify-center items-center px-4 py-2.5 border border-slate-300 dark:border-slate-600 text-sm font-medium rounded-lg shadow-sm text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-700 hover:bg-slate-50 dark:hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-slate-800"
+                data-i18n-skip="true">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-eraser mr-1.5 shrink-0"><path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"/><path d="M22 21H7"/><path d="m5 11 9 9"/></svg>
+                <span data-i18n="generate.clear_btn">Clear</span>
+              </button>
+              <button type="button" id="gen-submit"
+                class="hover:-translate-y-0.5 active:scale-95 transition-all duration-200 w-full inline-flex justify-center items-center px-4 py-2.5 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-slate-800 disabled:opacity-50"
+                disabled="">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-split mr-1.5 shrink-0"><path d="M16 3h5v5"/><path d="M8 3H3v5"/><path d="M12 22v-8.3a4 4 0 0 0-1.172-2.872L3 3"/><path d="m15 9 6-6"/></svg>
+                <span class="button-text" data-i18n="generate.generate_btn">Generate Shares</span>
+                <svg class="animate-spin ml-2 h-4 w-4 text-white hidden button-spinner"
+                  xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                  </path>
+                </svg>
+              </button>
+            </div>
+          </div>
+          <p id="gen-error" class="text-red-600 dark:text-red-400 mt-3 text-sm hidden"></p>
+          <div id="gen-result" class="hidden"></div>
+          </form>
+        </div>
+      </div>
+      <div class="tab-pane transition-opacity duration-300 ease-in-out hidden" id="reconstruct">
+        <!-- De-Modalized QR Scanner -->
+        <div id="qrScannerModal"
+          class="hidden flex flex-col overflow-hidden bg-black fixed top-[48px] bottom-16 left-0 w-full z-[60] rounded-none md:relative md:top-auto md:bottom-auto md:left-auto md:z-10 md:max-w-2xl md:mx-auto md:mt-8 md:h-[calc(100vh-12rem)] md:rounded-2xl min-h-[400px] md:shadow-2xl md:border md:border-slate-800 dark:md:border-slate-700 md:ring-1 md:ring-black/5">
+          <div id="qrScannerModalVideoContainer" class="flex-1 relative min-h-0 w-full bg-black">
+            <video id="qrScannerModalVideoPreview" playsinline=""
+              class="absolute inset-0 w-full h-full object-cover"></video>
+            <canvas id="qrScannerHudCanvas"
+              style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:50;"></canvas>
+          </div>
+          <div
+            class="p-4 bg-gray-900 text-white flex flex-col items-center justify-between shrink-0 space-y-3 border-t border-gray-800 relative z-20">
+            <div class="w-full flex items-center justify-between">
+              <div class="w-10"></div>
+              <h3 id="qrScannerModalTitle" class="text-lg font-semibold text-white text-center m-0" data-i18n="scanner.title">Scan QR Code</h3>
+              <button id="qr-torch-btn" type="button"
+                class="flex items-center justify-center w-10 h-10 p-2 rounded-full bg-gray-800 hover:bg-gray-700 text-gray-300 transition-colors border border-gray-600 invisible"
+                aria-label="Toggle flashlight">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                  class="lucide lucide-flashlight-off">
+                  <path d="M16 16v4a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2V10c0-2-2-2-2-4"/>
+                  <path d="M7 2h11v4c0 2-2 2-2 4v1"/>
+                  <line x1="11" x2="18" y1="6" y2="6"/>
+                  <line x1="2" x2="22" y1="2" y2="22"/>
+                </svg>
+              </button>
+            </div>
+            <div id="qrScannerModalStatus"
+              class="w-full flex items-center justify-center gap-2 bg-gray-800/60 rounded-lg py-2.5 px-4 border border-gray-700 min-h-[2.5rem]">
+              <span id="qrScannerModalStatusIcon" class="shrink-0 text-gray-400">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>
+                </svg>
+              </span>
+              <span id="qrScannerModalStatusText" class="text-sm text-gray-300"
+                data-i18n="scanner.desc">Point camera at a QR code.</span>
+            </div>
+
+            <button id="stopQrScannerModalButton" type="button"
+              class="hover:-translate-y-0.5 active:scale-95 transition-all duration-200 w-full max-w-sm inline-flex justify-center items-center px-4 py-2 border border-gray-600 text-sm font-medium rounded-md shadow-sm text-white bg-gray-800 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+              <svg id="qrScannerModalStopIcon" xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round" class="lucide lucide-scan-line mr-2">
+                <path d="M3 7V5a2 2 0 0 1 2-2h2"></path>
+                <path d="M17 3h2a2 2 0 0 1 2 2v2"></path>
+                <path d="M21 17v2a2 2 0 0 1-2 2h-2"></path>
+                <path d="M7 21H5a2 2 0 0 1-2-2v-2"></path>
+                <path d="M7 12h10"></path>
+              </svg>
+              <svg id="qrScannerModalCloseIcon" xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round" class="lucide lucide-x-octagon mr-2 hidden">
+                <polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"></polygon>
+                <line x1="15" y1="9" x2="9" y2="15"></line>
+                <line x1="9" y1="9" x2="15" y2="15"></line>
+              </svg>
+              <span id="qrScannerModalStopButtonText" data-i18n="scanner.stop_btn">Stop Scanning</span>
+            </button>
+          </div>
+        </div>
+        <div id="qr-scanner-container" class="mb-6 w-full max-w-2xl mx-auto" style="display: none;">
+          <video id="qr-video-preview" playsinline=""
+            style="width:100%; border-radius: 0.5rem; border: 1px solid #ccc;"></video>
+        </div>
+        <div id="reconstruct-menu-grid"
+          class="w-full p-3 md:p-4 transition-all">
+
+          <div class="grid grid-cols-2 gap-4 mb-3">
+            <!-- Scan QR (top-left) -->
+            <div id="recon-qr-card"
+              class="recon-option p-4 text-center bg-white dark:bg-slate-800 shadow-sm border border-slate-200 dark:border-slate-700 rounded-xl transition-all duration-150 active:scale-95 active:shadow-inner"
+              data-mode="qr">
+              <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                class="lucide lucide-qr-code mx-auto mb-2 text-blue-600 dark:text-blue-400">
+                <rect width="5" height="5" x="3" y="3" rx="1"></rect>
+                <rect width="5" height="5" x="16" y="3" rx="1"></rect>
+                <rect width="5" height="5" x="3" y="16" rx="1"></rect>
+                <path d="M21 16h-3a2 2 0 0 0-2 2v3"></path>
+                <path d="M21 21v.01"></path>
+                <path d="M12 7v3a2 2 0 0 1-2 2H7"></path>
+                <path d="M3 12h.01"></path>
+                <path d="M12 3h.01"></path>
+                <path d="M12 16v.01"></path>
+                <path d="M16 12h1"></path>
+                <path d="M21 12v.01"></path>
+                <path d="M12 21v-1"></path>
+              </svg>
+              <h5 class="font-medium" data-i18n="reconstruct.scan_qr">Scan QR</h5>
+              <p id="recon-qr-desc" class="text-xs text-slate-500 dark:text-slate-400" data-i18n="reconstruct.qr_desc">Scan shares via camera</p>
+            </div>
+            <!-- NFC Cards (top-right) -->
+            <div id="recon-nfc-card"
+              class="recon-option p-4 text-center bg-white dark:bg-slate-800 shadow-sm border border-slate-200 dark:border-slate-700 rounded-xl transition-all duration-150 active:scale-95 active:shadow-inner"
+              data-mode="nfc">
+              <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                class="lucide lucide-nfc mx-auto mb-2 text-blue-600 dark:text-blue-400">
+                <path d="M6 8.32a7.43 7.43 0 0 1 0 7.36" />
+                <path d="M9.46 6.21a11.76 11.76 0 0 1 0 11.58" />
+                <path d="M12.91 4.1a15.91 15.91 0 0 1 .01 15.8" />
+                <path d="M16.37 2a20.16 20.16 0 0 1 0 20" />
+              </svg>
+              <h5 class="font-medium" data-i18n="reconstruct.nfc_tab">NFC Cards</h5>
+              <p class="text-xs text-slate-500 dark:text-slate-400" data-i18n="reconstruct.nfc_desc">Scan hardware tags</p>
+            </div>
+            <!-- Manual Entry (bottom-left) -->
+            <div id="recon-manual-entry-card"
+              class="recon-option p-4 text-center bg-white dark:bg-slate-800 shadow-sm border border-slate-200 dark:border-slate-700 rounded-xl transition-all duration-150 active:scale-95 active:shadow-inner"
+              data-mode="manual">
+              <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                class="lucide lucide-keyboard mx-auto mb-2 text-blue-600 dark:text-blue-400">
+                <path d="M10 8h.01"></path>
+                <path d="M12 12h.01"></path>
+                <path d="M14 8h.01"></path>
+                <path d="M16 12h.01"></path>
+                <path d="M18 8h.01"></path>
+                <path d="M6 8h.01"></path>
+                <path d="M7 16h10"></path>
+                <path d="M8 12h.01"></path>
+                <rect width="20" height="16" x="2" y="4" rx="2"></rect>
+              </svg>
+              <h5 class="font-medium" data-i18n="reconstruct.manual_entry">Manual Entry</h5>
+              <p class="text-xs text-slate-500 dark:text-slate-400" data-i18n="reconstruct.manual_desc">Paste or upload shares</p>
+            </div>
+            <!-- Inspect Share (bottom-right) -->
+            <div
+              class="recon-option p-4 text-center bg-white dark:bg-slate-800 shadow-sm border border-slate-200 dark:border-slate-700 rounded-xl transition-all duration-150 active:scale-95 active:shadow-inner"
+              data-mode="inspect">
+              <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                class="lucide lucide-search mx-auto mb-2 text-blue-600 dark:text-blue-400">
+                <path d="m21 21-4.34-4.34"></path>
+                <circle cx="11" cy="11" r="8"></circle>
+              </svg>
+              <h5 class="font-medium" data-i18n="reconstruct.inspect_share">Inspect Share</h5>
+              <p class="text-xs text-slate-500 dark:text-slate-400" data-i18n="reconstruct.inspect_desc">View metadata of one share</p>
+            </div>
+          </div>
+          <!-- Secondary buttons removed — cards are 1-click actions -->
+          <!-- Legacy recon-password-container, recon-submit, and recon-error removed — Manual Entry sheet owns these now -->
+
+        </div>
+
+
+
+</div>
+      <div class="tab-pane transition-opacity duration-300 ease-in-out hidden" id="test">
+        <div class="bg-white dark:bg-slate-800 rounded-lg shadow-md p-6">
+
+          <button id="test-submit"
+            class="hover:-translate-y-0.5 active:scale-95 transition-all duration-200 w-full inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-slate-800 disabled:opacity-50">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+              class="lucide lucide-play mr-2">
+              <polygon points="6 3 20 12 6 21 6 3"></polygon>
+            </svg>
+            <span class="button-text" data-i18n="test.run_btn">Run Test Suite</span>
+            <svg class="animate-spin ml-2 h-4 w-4 text-white hidden button-spinner" xmlns="http://www.w3.org/2000/svg"
+              fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">
+              </circle>
+              <path class="opacity-75" fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+              </path>
+            </svg>
+          </button>
+          <!-- Diagnostic Results Panel -->
+          <div id="test-result" class="hidden">
+            <!-- Header on white card -->
+            <div class="flex items-center gap-2.5 mb-2">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                class="text-blue-600 dark:text-blue-400 shrink-0">
+                <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/>
+                <path d="M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2"/>
+                <path d="M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2"/>
+                <path d="m9 12 2 2 4-4"/>
+              </svg>
+              <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-100" data-i18n="test.results_title">Diagnostic Results</h3>
+            </div>
+            <!-- Log container with subtle background -->
+            <div id="test-logs-output" class="bg-slate-50 dark:bg-slate-900/50 rounded-lg px-4 py-2 text-xs font-mono"></div>
+            <!-- Final banner (injected by JS after tests complete) -->
+            <div id="test-final-banner"></div>
+            <!-- Done button (unhidden by JS after tests complete) -->
+            <button id="test-done-btn"
+              class="hidden w-full mt-3 px-4 py-2.5 text-sm font-medium rounded-lg border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-700 hover:bg-slate-50 dark:hover:bg-slate-600 transition-all duration-200 hover:-translate-y-0.5 active:scale-95 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 dark:focus:ring-offset-slate-800"
+              data-i18n="test.done">Done</button>
+          </div>
+        </div>
+      </div>
+      <div class="tab-pane transition-opacity duration-300 ease-in-out hidden" id="settings">
+        <div class="mb-6 p-4 border border-slate-200 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800">
+          <h3 class="text-md font-semibold text-slate-800 dark:text-slate-200 mb-2" data-i18n="settings.language">
+            Language / Idioma</h3>
+
+          <label for="auto-lang-toggle-switch"
+            class="mb-3 flex items-center justify-between cursor-pointer w-full md:w-64">
+            <span class="text-sm font-medium text-slate-700 dark:text-slate-300" data-i18n="settings.auto_lang">Auto
+              language detection</span>
+            <div class="relative">
+              <input type="checkbox" id="auto-lang-toggle-switch" class="sr-only peer">
+              <div
+                class="w-11 h-6 bg-slate-300 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-500 dark:peer-focus:ring-blue-600 rounded-full peer dark:bg-slate-600 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-500 peer-checked:bg-blue-600">
+              </div>
+            </div>
+          </label>
+          <select id="language-select"
+            class="bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-md px-3 py-2 text-sm text-slate-700 dark:text-slate-200 focus:ring-blue-500 focus:border-blue-500 w-full md:w-64">
+            <optgroup label="Supported Languages">
+              <option value="en">English (US)</option>
+              <option value="ar">العربية (AR)</option>
+              <option value="bn">বাংলা (BN)</option>
+              <option value="de">Deutsch (DE)</option>
+              <option value="es">Español (ES)</option>
+              <option value="fr">Français (FR)</option>
+              <option value="he">עברית (HE)</option>
+              <option value="hi">हिन्दी (HI)</option>
+              <option value="id">Bahasa Indonesia (ID)</option>
+              <option value="it">Italiano (IT)</option>
+              <option value="ja">日本語 (JA)</option>
+              <option value="ko">한국어 (KO)</option>
+              <option value="nl">Nederlands (NL)</option>
+              <option value="pl">Polski (PL)</option>
+              <option value="pt">Português (PT)</option>
+              <option value="ru">Русский (RU)</option>
+              <option value="th">ภาษาไทย (TH)</option>
+              <option value="tr">Türkçe (TR)</option>
+              <option value="vi">Tiếng Việt (VI)</option>
+              <option value="zh-CN">简体中文 (ZH-CN)</option>
+              <option value="zh-TW">繁體中文 (ZH-TW)</option>
+            </optgroup>
+          </select>
+          <label for="rtl-toggle-switch" class="mt-4 flex items-center justify-between cursor-pointer w-full md:w-64">
+            <span class="text-sm font-medium text-slate-700 dark:text-slate-300" data-i18n="settings.rtl_override">Force
+              RTL UI Layout</span>
+            <div class="relative">
+              <input type="checkbox" id="rtl-toggle-switch" class="sr-only peer">
+              <div
+                class="w-11 h-6 bg-slate-300 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-500 dark:peer-focus:ring-blue-600 rounded-full peer dark:bg-slate-600 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-500 peer-checked:bg-blue-600">
+              </div>
+            </div>
+          </label>
+        </div>
+        <div class="bg-white dark:bg-slate-800 rounded-lg shadow-md p-6">
+
+          <div class="space-y-8">
+            <div>
+              <h3 class="text-lg font-medium text-slate-900 dark:text-slate-100 mb-1" data-i18n="settings.appearance">
+                Appearance</h3>
+              <div class="bg-slate-50 dark:bg-slate-700/50 p-4 rounded-md">
+                <label for="theme-toggle-switch" class="flex items-center justify-between cursor-pointer">
+                  <span class="text-sm font-medium text-slate-700 dark:text-slate-300"
+                    data-i18n="settings.dark_mode">Dark Mode</span>
+                  <div class="relative">
+                    <input type="checkbox" id="theme-toggle-switch" class="sr-only peer">
+                    <div
+                      class="w-11 h-6 bg-slate-300 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-500 dark:peer-focus:ring-blue-600 rounded-full peer dark:bg-slate-600 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-500 peer-checked:bg-blue-600">
+                    </div>
+                  </div>
+                </label>
+              </div>
+            </div>
+            <div>
+              <h3 class="text-lg font-medium text-slate-900 dark:text-slate-100 mb-1"
+                data-i18n="settings.crypto_profile">Security Profile</h3>
+              <div class="bg-slate-50 dark:bg-slate-700/50 p-4 rounded-md">
+
+                <!-- NFC password prompt moved to dedicated action sheet (#password-prompt-modal) -->
+                <div class="flex flex-col gap-3 mt-4">
+                  <label for="crypto-schema-select" class="text-sm font-medium text-slate-700 dark:text-slate-300"
+                    data-i18n="settings.crypto_desc">Select cryptographic parameters for encoding future shares:</label>
+                  <select id="crypto-schema-select"
+                    class="bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 outline-none text-slate-900 dark:text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
+                    <!-- Dynamically populated via JS -->
+                  </select>
+                  <div id="crypto-schema-stats"
+                    class="mt-2 text-xs font-mono text-slate-600 dark:text-slate-400 bg-slate-200 dark:bg-slate-800 p-3 rounded border border-slate-300 dark:border-slate-600 whitespace-pre-wrap">
+                    <!-- Populated via JS -->
+                  </div>
+                  <p id="crypto-schema-desc-span"
+                    class="mt-2 text-[11px] leading-relaxed text-slate-500 dark:text-slate-400"></p>
+                </div>
+              </div>
+            </div>
+            <!-- Feedback & Alerts -->
+            <div>
+              <h3 class="text-lg font-medium text-slate-900 dark:text-slate-100 mb-1" data-i18n="settings.feedback_title">Feedback &amp; Alerts</h3>
+              <div class="bg-slate-50 dark:bg-slate-700/50 p-4 rounded-md space-y-4">
+                <label for="sound-toggle-switch" class="flex items-center justify-between cursor-pointer">
+                  <div class="flex items-center gap-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                      class="text-blue-500 shrink-0"><path d="M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298z"/><path d="M16 9a5 5 0 0 1 0 6"/><path d="M19.364 18.364a9 9 0 0 0 0-12.728"/></svg>
+                    <span class="text-sm font-medium text-slate-700 dark:text-slate-300"
+                      data-i18n="settings.audio_enable">Enable UI sounds</span>
+                  </div>
+                  <div class="relative">
+                    <input type="checkbox" id="sound-toggle-switch" class="sr-only peer">
+                    <div
+                      class="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-600 peer-checked:bg-blue-600">
+                    </div>
+                  </div>
+                </label>
+                <div class="border-t border-slate-200 dark:border-slate-600"></div>
+                <label for="haptic-toggle-switch" class="flex items-center justify-between cursor-pointer">
+                  <div class="flex items-center gap-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                      class="text-blue-500 shrink-0"><path d="m2 8 2 2-2 2 2 2-2 2"/><path d="m22 8-2 2 2 2-2 2 2 2"/><rect width="8" height="14" x="8" y="5" rx="1"/></svg>
+                    <span class="text-sm font-medium text-slate-700 dark:text-slate-300"
+                      data-i18n="settings.haptic_enable">Enable haptic feedback</span>
+                  </div>
+                  <div class="relative">
+                    <input type="checkbox" id="haptic-toggle-switch" class="sr-only peer">
+                    <div
+                      class="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-600 peer-checked:bg-blue-600">
+                    </div>
+                  </div>
+                </label>
+              </div>
+            </div>
+            <!-- Logs -->
+            <div class="mt-6">
+              <h3 class="text-lg font-medium text-slate-900 dark:text-slate-100 mb-1" data-i18n="logs.title">Logs</h3>
+              <div class="bg-slate-50 dark:bg-slate-700/50 p-4 rounded-md">
+                <label for="logs-toggle-switch" class="flex items-center justify-between cursor-pointer">
+                  <span class="text-sm font-medium text-slate-700 dark:text-slate-300"
+                    data-i18n="settings.log_toggle">Show Detailed Activity Logs</span>
+                  <div class="relative">
+                    <input type="checkbox" id="logs-toggle-switch" class="sr-only peer">
+                    <div
+                      class="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-600 peer-checked:bg-blue-600">
+                    </div>
+                  </div>
+                </label>
+              </div>
+            </div>
+            <!-- Install Application -->
+            <div id="pwa-settings-section" class="mt-6">
+              <h3 class="text-lg font-medium text-slate-900 dark:text-slate-100 mb-1"
+                data-i18n="settings.install_title">Install Application</h3>
+              <div class="bg-slate-50 dark:bg-slate-700/50 p-4 rounded-md">
+                <div class="flex flex-col gap-3">
+                  <p class="text-sm text-slate-600 dark:text-slate-400"
+                    data-i18n="settings.install_desc">Install for offline, native-like access</p>
+                  <button id="pwa-install-btn"
+                    class="hover:-translate-y-0.5 active:scale-95 transition-all duration-200 w-full inline-flex justify-center items-center px-4 py-2.5 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-slate-800 gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                      class="lucide lucide-download"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+                    <span data-i18n="settings.install_btn">Install App</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+            <!-- Diagnostics -->
+            <div id="diagnostics-settings-section" class="mt-6">
+              <h3 class="text-lg font-medium text-slate-900 dark:text-slate-100 mb-1" data-i18n="nav.test">Diagnostic Suite</h3>
+              <div class="bg-slate-50 dark:bg-slate-700/50 p-4 rounded-md">
+                <div class="flex flex-col gap-3">
+                  <p class="text-sm text-slate-600 dark:text-slate-400"
+                    data-i18n="settings.diagnostic_desc">Run internal cryptographic test suites</p>
+                  <button id="run-tests-btn"
+                    class="hover:-translate-y-0.5 active:scale-95 transition-all duration-200 tab-button w-full inline-flex justify-center items-center px-4 py-2.5 border border-slate-300 dark:border-slate-600 text-sm font-medium text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-700 rounded-lg shadow-sm hover:bg-slate-50 dark:hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 dark:focus:ring-offset-slate-800 gap-2"
+                    data-target="#test">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                      class="lucide lucide-flask-conical"><path d="M14 2v6a2 2 0 0 0 .245.96l5.51 10.08A2 2 0 0 1 18 22H6a2 2 0 0 1-1.755-2.96l5.51-10.08A2 2 0 0 0 10 8V2"></path><path d="M6.453 15h11.094"></path><path d="M8.5 2h7"></path></svg>
+                    <span data-i18n="nav.test">Run Tests</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- Trust Footer -->
+        <p id="settings-trust-footer" class="text-center text-xs text-slate-400 dark:text-slate-500 mt-6 mb-2">PieceKeeper <span class="app-version-label"></span> &bull; <span data-i18n="footer.offline">100% Offline</span> &bull; <a href="https://github.com/MidnightLogic/PieceKeeper" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 text-blue-500 dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-300 transition-colors"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="inline-block"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></svg><span data-i18n="footer.open_source">Open Source on GitHub</span></a></p>
+      </div>
+
+      <div class="tab-pane transition-opacity duration-300 ease-in-out hidden" id="help">
+        <div
+          class="bg-white dark:bg-slate-800/80 backdrop-blur-sm rounded-2xl shadow-xl shadow-slate-200/50 dark:shadow-none ring-1 ring-slate-200 dark:ring-slate-700/50 p-6 sm:p-8">
+          <h2 class="text-2xl font-bold text-slate-800 dark:text-slate-100 mb-6" data-i18n="help.title">Help & Overview
+          </h2>
+
+          <div class="space-y-6 text-slate-700 dark:text-slate-300 leading-relaxed text-sm">
+            <section>
+              <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-200 mb-2" data-i18n="help.what_is_title">
+                What is PieceKeeper?</h3>
+              <div data-i18n="help.what_is_body" data-html="true"></div>
+            </section>
+
+            <section>
+              <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-200 mb-2" data-i18n="help.end_user_title">
+                Security Guarantees</h3>
+              <div data-i18n="help.end_user_body" data-html="true"></div>
+            </section>
+
+            <section>
+              <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-200 mb-2" data-i18n="help.how_to_title">
+                How to Use</h3>
+              <div data-i18n="help.how_to_body" data-html="true"></div>
+            </section>
+
+            <section>
+              <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-200 mb-2" data-i18n="help.scenarios_title">
+                Common Use Cases</h3>
+              <div data-i18n="help.scenarios_body" data-html="true"></div>
+            </section>
+          </div>
+          <!-- Trust Footer -->
+          <p class="text-center text-xs text-slate-400 dark:text-slate-500 mt-8 mb-2">PieceKeeper <span class="app-version-label"></span> &bull; <span data-i18n="footer.offline">100% Offline</span> &bull; <a href="https://github.com/MidnightLogic/PieceKeeper" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 text-blue-500 dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-300 transition-colors"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="inline-block"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></svg><span data-i18n="footer.open_source">Open Source on GitHub</span></a></p>
+        </div>
+      </div>
+
+    </div>
+    <div id="logs-container-wrapper" class="hidden bg-slate-200 dark:bg-slate-800 rounded-lg shadow-md p-4 mt-6">
+      <h3 class="text-lg font-semibold mb-2 flex items-center gap-2">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+          class="lucide lucide-scroll-text-icon lucide-scroll-text">
+          <path d="M15 12h-5"></path>
+          <path d="M15 8h-5"></path>
+          <path d="M19 17V5a2 2 0 0 0-2-2H4"></path>
+          <path
+            d="M8 21h12a2 2 0 0 0 2-2v-1a1 1 0 0 0-1-1H11a1 1 0 0 0-1 1v1a2 2 0 1 1-4 0V5a2 2 0 1 0-4 0v2a1 1 0 0 0 1 1h3">
+          </path>
+        </svg>
+        <span data-i18n="logs.title">Logs</span>
+      </h3>
+      <div class="log-panel bg-white dark:bg-slate-900 p-3 rounded-md text-xs font-mono" id="logs">
+        <span data-i18n="logs.empty">Logs will appear here...</span>
+      </div>
+    </div>
+  </div>
+  <div id="qrModal"
+    class="fixed inset-0 bg-slate-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center z-[130] hidden">
+    <div class="relative mx-auto p-5 border w-96 shadow-lg rounded-md bg-white dark:bg-slate-800">
+      <div class="mt-3 text-center">
+        <h3 class="text-lg leading-6 font-medium text-slate-900 dark:text-slate-100 mb-2" id="qrModalLabel"
+          data-i18n="qr_modal.title">
+          QR Code for Share</h3>
+        <div class="mt-2 px-7 py-3">
+          <div id="qr-code" class="flex justify-center">
+          </div>
+          <p class="text-xs text-slate-500 dark:text-slate-400 mt-2" data-i18n="qr_modal.desc">Scan this
+            QR code to input the share.</p>
+        </div>
+        <div class="items-center px-4 py-3">
+          <button id="qr-modal-close" data-i18n="qr_modal.close"
+            class="hover:-translate-y-0.5 active:scale-95 transition-all duration-200 px-4 py-2 bg-slate-500 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-slate-300">
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <pwa-install id="pwa-installer" disable-install-description></pwa-install>
+  <style>
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .animate-fadeIn {
+      animation: fadeIn 0.3s ease-out forwards;
+    }
+  </style>
+  <script type="module" src="./js/main.js"></script>
+
+  <!-- iOS PWA Install Prompt -->
+  <div id="ios-pwa-prompt"
+    class="hidden fixed bottom-4 left-4 right-4 sm:left-auto sm:right-4 sm:w-96 bg-white dark:bg-slate-800 rounded-2xl shadow-xl z-50 border border-slate-200 dark:border-slate-700 animate-fadeIn p-4">
+    <div class="flex justify-between items-start mb-3">
+      <div>
+        <h3 class="font-semibold text-slate-900 dark:text-white" data-i18n="pwa.title">Install PieceKeeper</h3>
+        <p class="text-sm text-slate-600 dark:text-slate-400 mt-1" data-i18n="pwa.desc">Install this application on your
+          device for offline use and quick access.</p>
+      </div>
+      <button id="close-pwa-prompt" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+    <div class="bg-blue-50 dark:bg-blue-900/30 rounded-xl p-3 flex items-center justify-between">
+      <span class="text-sm text-blue-800 dark:text-blue-200" data-i18n="pwa.instruction">Tap <svg
+          xmlns="http://www.w3.org/2000/svg" class="inline h-5 w-5 mx-1" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path>
+          <polyline points="16 6 12 2 8 6"></polyline>
+          <line x1="12" y1="2" x2="12" y2="15"></line>
+        </svg> then <strong>Add to Home Screen</strong></span>
+    </div>
+  </div>
+
+  <!-- Universal PWA Install Banner -->
+  <div id="pwa-install-banner-toast" class="hidden fixed bottom-0 inset-x-0 z-50 pb-2 sm:pb-5 animate-slideUp">
+    <div class="mx-auto max-w-7xl px-2 sm:px-6 lg:px-8">
+      <div class="rounded-lg bg-blue-600 shadow-lg sm:p-3 p-2">
+        <div class="flex flex-wrap items-center justify-between">
+          <div class="flex w-0 flex-1 items-center">
+            <span class="flex rounded-lg bg-blue-800 p-2 text-white">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                class="lucide lucide-download">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+              </svg>
+            </span>
+            <div class="ml-3 font-medium text-white">
+              <p class="text-base font-bold" data-i18n="pwa.banner_title">Install PieceKeeper</p>
+              <p class="text-xs sm:text-sm font-normal text-blue-100 mt-0.5" data-i18n="pwa.banner_sub">For offline
+                access and better security!</p>
+            </div>
+          </div>
+          <div class="order-3 mt-2 w-full flex-shrink-0 sm:order-2 sm:mt-0 sm:w-auto">
+            <button id="pwa-banner-install-btn"
+              class="hover:-translate-y-0.5 active:scale-95 transition-all duration-200 flex items-center justify-center rounded-md border border-transparent bg-white px-4 py-2 text-sm font-bold text-blue-600 shadow-sm hover:bg-blue-50"
+              data-i18n="pwa.install_btn">Install</button>
+          </div>
+          <div class="order-2 flex-shrink-0 sm:order-3 sm:ml-2">
+            <button type="button" id="pwa-banner-dismiss-btn"
+              class="-mr-1 flex rounded-md p-2 hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-white sm:-mr-2 transition-colors">
+              <span class="sr-only">Dismiss</span>
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                class="lucide lucide-x text-white">
+                <path d="M18 6 6 18"></path>
+                <path d="m6 6 12 12"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Camera Pre-Flight Backdrop -->
+  <div id="camera-pre-flight-backdrop"
+    class="fixed inset-0 bg-black/50 z-[115] hidden opacity-0 transition-opacity duration-300 backdrop-blur-sm">
+  </div>
+  <!-- Camera Pre-Flight Action Sheet -->
+  <div id="camera-pre-flight-modal"
+    class="fixed bottom-0 inset-x-0 max-w-xl mx-auto z-[120] hidden
+        bg-white dark:bg-slate-900 rounded-t-3xl
+        shadow-[0_-10px_40px_rgba(0,0,0,0.25)]
+        transform translate-y-full transition-transform duration-300 ease-out
+        flex flex-col"
+    id="camera-pre-flight-content">
+    <!-- Drag handle -->
+    <div class="w-full flex justify-center pt-3 pb-1 shrink-0">
+      <div class="w-10 h-1 bg-slate-300 dark:bg-slate-600 rounded-full"></div>
+    </div>
+    <!-- Standard Action Sheet Header -->
+    <div class="px-5 pb-3 flex items-center justify-between shrink-0">
+      <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-200"
+        data-i18n="camera_pre_flight.title">Camera Access Required</h3>
+      <button id="camera-pre-flight-x" type="button"
+        class="p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+          class="lucide lucide-x"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
+      </button>
+    </div>
+    <div class="px-5 pb-6">
+      <p class="text-sm text-slate-600 dark:text-slate-400 mb-4 leading-relaxed"
+        data-i18n="camera_pre_flight.description">To scan QR codes securely, PieceKeeper needs temporary access to your
+        camera. Your video feed is processed entirely offline and is never transmitted.</p>
+      <div class="grid grid-cols-2 gap-3 mt-4">
+        <button id="camera-pre-flight-cancel" type="button"
+          class="w-full px-4 py-2.5 border border-slate-300 dark:border-slate-600 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors active:scale-95"
+          data-i18n="camera_pre_flight.cancel_btn">Cancel</button>
+        <button id="camera-pre-flight-allow" type="button"
+          class="w-full px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors active:scale-95"
+          data-i18n="camera_pre_flight.allow_btn">Grant Access</button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- PWA Standalone Enforcer -->
+  <div id="pwa-standalone-enforcer"
+    class="fixed inset-0 bg-slate-900 bg-opacity-95 z-[100] hidden items-center justify-center p-6 text-center backdrop-blur-md">
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-2xl p-8 max-w-md border border-red-500/30">
+      <div
+        class="w-16 h-16 bg-red-100 dark:bg-red-900/50 text-red-600 dark:text-red-400 rounded-full flex items-center justify-center mx-auto mb-6">
+        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+          <path d="M12 8v4" />
+          <path d="M12 16h.01" />
+        </svg>
+      </div>
+      <h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-4" data-i18n="pwa.lockout_title">App Installation
+        Required</h2>
+      <p class="text-slate-600 dark:text-slate-300 mb-6 leading-relaxed" data-i18n="pwa.lockout_desc">PieceKeeper is a
+        hardware-grade web vault. To ensure maximum device security and safe offline routing for hardware NFC readers,
+        you must install this application to your device's Home Screen.</p>
+      <p class="text-sm text-slate-500 dark:text-slate-400 italic" data-i18n="pwa.lockout_sub">Please use your browser
+        menu to "Add to Home Screen" or "Install App", then launch it from your device desktop.</p>
+    </div>
+  </div>
+
+  <!-- NFC Modal -->
+
+  <!-- NFC Pre-flight Modal -->
+  <!-- NFC Pre-flight Backdrop -->
+  <div id="nfc-preflight-backdrop"
+    class="fixed inset-0 bg-black/50 z-[115] hidden opacity-0 transition-opacity duration-300 backdrop-blur-sm">
+  </div>
+  <div id="nfc-preflight-modal"
+    class="fixed bottom-0 inset-x-0 max-w-xl mx-auto z-[120] hidden
+        bg-white dark:bg-slate-900 rounded-t-3xl
+        shadow-[0_-10px_40px_rgba(0,0,0,0.25)]
+        transform translate-y-full transition-transform duration-300 ease-out
+        flex flex-col">
+    <!-- Drag handle -->
+    <div class="w-full flex justify-center pt-3 pb-1 shrink-0">
+      <div class="w-10 h-1 bg-slate-300 dark:bg-slate-600 rounded-full"></div>
+    </div>
+    <!-- Standard Action Sheet Header -->
+    <div class="px-5 pb-3 flex items-center justify-between shrink-0">
+      <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-200"
+        data-i18n="nfc.nfc_preflight_title">NFC Hardware Access</h3>
+      <button id="nfc-preflight-cancel" type="button"
+        class="p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+          class="lucide lucide-x"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
+      </button>
+    </div>
+    <div class="px-5 pb-6">
+      <p class="text-sm text-slate-600 dark:text-slate-400 mb-6 leading-relaxed"
+        data-i18n="nfc.nfc_preflight_desc">PieceKeeper needs permission to access your device's NFC antenna to read and
+        write cryptographic shares.</p>
+      <div class="grid grid-cols-2 gap-3">
+        <button id="nfc-preflight-cancel-btn" type="button"
+          class="w-full px-4 py-2.5 border border-slate-300 dark:border-slate-600 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors active:scale-95"
+          data-i18n="nfc.nfc_preflight_btn_cancel">Cancel</button>
+        <button id="nfc-preflight-grant" type="button"
+          class="w-full px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors active:scale-95"
+          data-i18n="nfc.nfc_preflight_btn_grant">Grant Access</button>
+      </div>
+    </div>
+    </div>
+  </div>
+  <!-- NFC Modal Backdrop -->
+  <div id="nfc-modal-backdrop"
+    class="fixed inset-0 bg-black/50 z-[115] hidden opacity-0 transition-opacity duration-300 backdrop-blur-sm">
+  </div>
+  <div id="nfc-modal"
+    class="fixed bottom-0 inset-x-0 max-w-xl mx-auto z-[120] hidden
+        bg-white dark:bg-slate-900 rounded-t-3xl
+        shadow-[0_-10px_40px_rgba(0,0,0,0.25)]
+        transform translate-y-full transition-transform duration-300 ease-out
+        flex flex-col"
+      id="nfc-modal-content">
+    <!-- Drag handle -->
+    <div class="w-full flex justify-center pt-3 pb-1 shrink-0">
+      <div class="w-12 h-1.5 bg-slate-300 dark:bg-slate-600 rounded-full"></div>
+    </div>
+    <!-- Standard Action Sheet Header -->
+    <div class="px-5 pb-3 flex items-center justify-between shrink-0">
+      <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-200" id="nfc-modal-title"
+        data-i18n="nfc.modal_title">Scan NFC Tags</h3>
+      <button id="nfc-modal-cancel" type="button"
+        class="p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+          class="lucide lucide-x"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
+      </button>
+    </div>
+    <div class="px-5 pb-6">
+      <p class="text-sm text-slate-600 dark:text-slate-400 mb-4"
+        id="nfc-modal-instruction">Hold device near physical NFC tag...</p>
+
+      <div
+        class="bg-slate-50 dark:bg-slate-900/50 rounded-lg py-3 px-4 border border-slate-200 dark:border-slate-700 w-full text-center">
+        <span id="nfc-modal-progress" class="text-blue-600 dark:text-blue-400 font-bold block mb-1">...</span>
+        <span id="nfc-modal-status" class="text-xs text-slate-500 block">Waiting for hardware activation.</span>
+      </div>
+    </div>
+    </div>
+  </div>
+
+  <!-- Password Prompt Action Sheet (for encrypted NFC/QR shares during reconstruction) -->
+  <div id="password-prompt-backdrop"
+    class="fixed inset-0 bg-black/50 z-[125] hidden opacity-0 transition-opacity duration-300 backdrop-blur-sm">
+  </div>
+  <div id="password-prompt-modal"
+    class="fixed bottom-0 inset-x-0 max-w-xl mx-auto z-[130] hidden
+        bg-white dark:bg-slate-900 rounded-t-3xl
+        shadow-[0_-10px_40px_rgba(0,0,0,0.25)]
+        transform translate-y-full transition-transform duration-300 ease-out
+        flex flex-col">
+    <!-- Drag handle -->
+    <div class="w-full flex justify-center pt-3 pb-1 shrink-0">
+      <div class="w-12 h-1.5 bg-slate-300 dark:bg-slate-600 rounded-full"></div>
+    </div>
+    <!-- Header -->
+    <div class="px-5 pb-3 flex items-center justify-between shrink-0">
+      <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-200"
+        data-i18n="password_prompt.title">Password Required</h3>
+      <button id="password-prompt-cancel" type="button"
+        class="p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+          class="lucide lucide-x"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
+      </button>
+    </div>
+    <!-- Body -->
+    <div class="px-5 pb-6">
+      <p class="text-sm text-slate-600 dark:text-slate-400 mb-4"
+        data-i18n="password_prompt.desc">This share is encrypted. Enter the password used during share creation to unlock it.</p>
+      <div class="space-y-3">
+        <div class="relative">
+          <input type="password" autocomplete="off" data-lpignore="true" data-1p-ignore="true" data-form-type="other"
+            spellcheck="false" id="password-prompt-input"
+            class="w-full bg-slate-50 border border-slate-300 text-slate-900 rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 dark:bg-slate-700 dark:border-slate-600 dark:placeholder-slate-400 dark:text-white"
+            data-i18n-placeholder="password_prompt.placeholder" placeholder="Enter share password...">
+        </div>
+        <p id="password-prompt-error" class="text-sm text-red-500 dark:text-red-400 hidden"
+          data-i18n="password_prompt.error">Incorrect password. Please try again.</p>
+        <button id="password-prompt-submit" type="button"
+          class="w-full bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white font-medium rounded-lg text-sm px-5 py-2.5 text-center transition-all duration-200"
+          data-i18n="password_prompt.submit_btn">Decrypt</button>
+      </div>
+    </div>
+  </div>
+
+  </div><!-- /app-shell -->
+  <!-- Toast container eradicated — element-level micro-interactions only -->
+
+  <!-- Mobile Bottom Navigation -->
+  <nav id="mobile-bottom-nav"
+    class="fixed bottom-0 inset-x-0 max-w-xl mx-auto bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex justify-around items-center h-16 z-50 pb-safe">
+    <button
+      class="flex flex-col items-center justify-center w-full h-full space-y-1 text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 tab-button"
+      data-target="#generate">
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+        class="lucide lucide-split">
+        <path d="M16 3h5v5"></path>
+        <path d="M8 3H3v5"></path>
+        <path d="M12 22v-8.3a4 4 0 0 0-1.172-2.872L3 3"></path>
+        <path d="m15 9 6-6"></path>
+      </svg>
+      <span class="text-[10px] font-medium" data-i18n="nav.generate">Generate Shares</span>
+    </button>
+
+    <button
+      class="flex flex-col items-center justify-center w-full h-full space-y-1 text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 tab-button"
+      data-target="#reconstruct">
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+        class="lucide lucide-combine-icon lucide-combine">
+        <path d="M10 18H5a3 3 0 0 1-3-3v-1"></path>
+        <path d="M14 2a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2"></path>
+        <path d="M20 2a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2"></path>
+        <path d="m7 21 3-3-3-3"></path>
+        <rect x="14" y="14" width="8" height="8" rx="2"></rect>
+        <rect x="2" y="2" width="8" height="8" rx="2"></rect>
+      </svg>
+      <span class="text-[10px] font-medium" data-i18n="nav.reconstruct">Reconstruct Secret</span>
+    </button>
+
+    <button
+      class="flex flex-col items-center justify-center w-full h-full space-y-1 text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 tab-button"
+      data-target="#settings">
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+        class="lucide lucide-settings">
+        <path
+          d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z">
+        </path>
+        <circle cx="12" cy="12" r="3"></circle>
+      </svg>
+      <span class="text-[10px] font-medium" data-i18n="nav.settings">Settings</span>
+    </button>
+
+    <button
+      class="flex flex-col items-center justify-center w-full h-full space-y-1 text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 tab-button"
+      data-target="#help">
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+        class="lucide lucide-help-circle">
+        <circle cx="12" cy="12" r="10"></circle>
+        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+        <line x1="12" y1="17" x2="12.01" y2="17"></line>
+      </svg>
+      <span class="text-[10px] font-medium" data-i18n="nav.help">Help</span>
+    </button>
+  </nav>
+
+  <!-- Generate Result Action Sheet Backdrop -->
+  <div id="gen-result-backdrop"
+    class="fixed inset-0 bg-black/50 z-[100] hidden opacity-0 transition-opacity duration-300 backdrop-blur-sm max-w-xl mx-auto">
+  </div>
+  <!-- Generate Result Action Sheet -->
+  <div id="gen-result-sheet" class="fixed bottom-0 inset-x-0 max-w-xl mx-auto z-[110] hidden
+        bg-white dark:bg-slate-900 rounded-t-3xl
+        shadow-[0_-10px_40px_rgba(0,0,0,0.25)]
+        transform translate-y-full transition-transform duration-300 ease-out
+        flex flex-col max-h-[85vh]">
+    <!-- Drag handle -->
+    <div class="w-full flex justify-center pt-3 pb-1 shrink-0">
+      <div class="w-10 h-1 bg-slate-300 dark:bg-slate-600 rounded-full"></div>
+    </div>
+    <!-- Title + Close -->
+    <div class="px-5 pb-3 flex items-center justify-between shrink-0">
+      <div class="flex items-center gap-2">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+          class="text-green-500">
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+          <polyline points="22 4 12 14.01 9 11.01" />
+        </svg>
+        <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-200"
+          data-i18n="toast.shares_generated_successfully">Shares Generated!</h3>
+      </div>
+      <button id="gen-result-sheet-close" type="button"
+        class="p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+          class="lucide lucide-x">
+          <path d="M18 6 6 18" />
+          <path d="m6 6 12 12" />
+        </svg>
+      </button>
+    </div>
+    <!-- Scrollable content -->
+    <div class="px-5 pt-1 pb-6 overflow-y-auto flex-1 min-h-0">
+      <!-- Action buttons grid -->
+      <div class="grid grid-cols-2 gap-2 mt-1 mb-4 relative z-20">
+        <button id="gen-copy-all"
+          class="active:scale-95 transition-all duration-200 inline-flex items-center justify-center px-3 py-2.5 border border-slate-300 dark:border-slate-600 text-sm font-medium rounded-xl shadow-sm text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-700 hover:bg-slate-50 dark:hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-slate-800"
+>
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+            class="mr-1.5 shrink-0">
+            <rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect>
+            <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path>
+          </svg>
+          <span data-i18n="generate.copy_all">Copy</span>
+        </button>
+        <button id="gen-print-all"
+          class="active:scale-95 transition-all duration-200 inline-flex items-center justify-center px-3 py-2.5 border border-slate-300 dark:border-slate-600 text-sm font-medium rounded-xl shadow-sm text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-700 hover:bg-slate-50 dark:hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-slate-800"
+>
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+            class="mr-1.5 shrink-0">
+            <polyline points="6 9 6 2 18 2 18 9"></polyline>
+            <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+            <rect width="12" height="8" x="6" y="14"></rect>
+          </svg>
+          <span data-i18n="generate.print_all">Print</span>
+        </button>
+        <button id="gen-nfc-all"
+          class="active:scale-95 transition-all duration-200 inline-flex items-center justify-center px-3 py-2.5 border border-slate-300 dark:border-slate-600 text-sm font-medium rounded-xl shadow-sm text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-700 hover:bg-slate-50 dark:hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-slate-800"
+>
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+            class="mr-1.5 shrink-0">
+            <path d="M6 8.32a7.43 7.43 0 0 1 0 7.36" />
+            <path d="M9.46 6.21a11.76 11.76 0 0 1 0 11.58" />
+            <path d="M12.91 4.1a15.91 15.91 0 0 1 .01 15.8" />
+            <path d="M16.37 2a20.16 20.16 0 0 1 0 20" />
+          </svg>
+          <span data-i18n="generate.write_nfc_all">NFC</span>
+        </button>
+        <button id="gen-download"
+          class="active:scale-95 transition-all duration-200 inline-flex items-center justify-center px-3 py-2.5 border border-slate-300 dark:border-slate-600 text-sm font-medium rounded-xl shadow-sm text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-700 hover:bg-slate-50 dark:hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-slate-800"
+>
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+            class="mr-1.5 shrink-0">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" x2="12" y1="15" y2="3"></line>
+          </svg>
+          <span data-i18n="generate.download_csv">CSV</span>
+        </button>
+      </div>
+      <!-- Print mode selector -->
+      <div
+        class="flex items-center gap-2 bg-slate-50 dark:bg-slate-800 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 mb-4">
+        <label for="pdf-export-mode"
+          class="text-sm font-medium text-slate-700 dark:text-slate-300 whitespace-nowrap"
+          data-i18n="generate.pdf_mode_label">Print Mode:</label>
+        <select id="pdf-export-mode"
+          class="block w-full pl-2 pr-8 py-1 text-sm border border-slate-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-700 dark:text-slate-100 transition-colors">
+          <option value="combined" data-i18n="generate.pdf_mode_combined">Combined (Single File)</option>
+          <option value="separate" data-i18n="generate.pdf_mode_separate">Separate PDFs (Pop-ups)</option>
+        </select>
+      </div>
+      <!-- Share cards container -->
+      <div id="gen-shares" class="bg-slate-100 dark:bg-slate-700 p-3 rounded-xl space-y-3 max-h-[40vh] overflow-y-auto">
+      </div>
+    </div>
+  </div>
+
+
+
+  <!-- Manual Entry Action Sheet Backdrop -->
+  <div id="manual-entry-backdrop"
+    class="fixed inset-0 bg-black/50 z-[100] hidden opacity-0 transition-opacity duration-300 backdrop-blur-sm">
+  </div>
+  <!-- Manual Entry Action Sheet -->
+  <div id="manual-entry-sheet" class="fixed bottom-0 inset-x-0 max-w-xl mx-auto z-[110] hidden
+        bg-white dark:bg-slate-900 rounded-t-3xl
+        shadow-[0_-10px_40px_rgba(0,0,0,0.25)]
+        transform translate-y-full transition-transform duration-300 ease-out
+        flex flex-col max-h-[85vh]">
+    <!-- Drag handle -->
+    <div class="w-full flex justify-center pt-3 pb-1 shrink-0">
+      <div class="w-10 h-1 bg-slate-300 dark:bg-slate-600 rounded-full"></div>
+    </div>
+    <!-- Title + Close -->
+    <div class="px-5 pb-3 flex items-center justify-between shrink-0">
+      <div class="flex items-center gap-2">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+          class="text-blue-500">
+          <path d="M10 8h.01"></path>
+          <path d="M12 12h.01"></path>
+          <path d="M14 8h.01"></path>
+          <path d="M16 12h.01"></path>
+          <path d="M18 8h.01"></path>
+          <path d="M6 8h.01"></path>
+          <path d="M7 16h10"></path>
+          <path d="M8 12h.01"></path>
+          <rect width="20" height="16" x="2" y="4" rx="2"></rect>
+        </svg>
+        <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-200"
+          data-i18n="reconstruct.manual_entry">Manual Entry</h3>
+      </div>
+      <button id="manual-entry-sheet-close" type="button"
+        class="p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+          class="lucide lucide-x">
+          <path d="M18 6 6 18" />
+          <path d="m6 6 12 12" />
+        </svg>
+      </button>
+    </div>
+    <!-- Content -->
+    <div class="px-5 pb-6 overflow-y-auto flex-1 min-h-0 space-y-4">
+      <!-- Paste Shares option -->
+      <button type="button" id="manual-entry-paste-btn"
+        class="w-full flex items-center gap-4 p-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 active:scale-[0.98] transition-all">
+        <div class="flex-shrink-0 w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+            class="text-blue-600 dark:text-blue-400">
+            <path d="M11 14h10"></path>
+            <path d="M16 4h2a2 2 0 0 1 2 2v1.344"></path>
+            <path d="m17 18 4-4-4-4"></path>
+            <path d="M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 1.793-1.113"></path>
+            <rect x="8" y="2" width="8" height="4" rx="1"></rect>
+          </svg>
+        </div>
+        <div class="text-left">
+          <h4 class="font-medium text-slate-800 dark:text-slate-200" data-i18n="reconstruct.paste_shares">Paste Shares</h4>
+          <p class="text-xs text-slate-500 dark:text-slate-400" data-i18n="reconstruct.paste_shares_desc">Manually paste shares</p>
+        </div>
+      </button>
+      <!-- Upload CSV option -->
+      <button type="button" id="manual-entry-csv-btn"
+        class="w-full flex items-center gap-4 p-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 active:scale-[0.98] transition-all">
+        <div class="flex-shrink-0 w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+            class="text-blue-600 dark:text-blue-400">
+            <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path>
+            <path d="M14 2v4a2 2 0 0 0 2 2h4"></path>
+            <path d="M12 12v6"></path>
+            <path d="m15 15-3-3-3 3"></path>
+          </svg>
+        </div>
+        <div class="text-left">
+          <h4 class="font-medium text-slate-800 dark:text-slate-200" data-i18n="reconstruct.upload_csv">Upload CSV</h4>
+          <p class="text-xs text-slate-500 dark:text-slate-400" data-i18n="reconstruct.csv_desc">Upload a CSV file</p>
+        </div>
+      </button>
+    </div>
+  </div>
+
+  <!-- Inspect Bottom Sheet Backdrop -->
+  <div id="inspect-backdrop"
+    class="fixed inset-0 bg-black/50 z-[100] hidden opacity-0 transition-opacity duration-300 backdrop-blur-sm">
+  </div>
+  <!-- Inspect Bottom Sheet -->
+  <div id="inspect-bottom-sheet" class="fixed bottom-0 inset-x-0 max-w-xl mx-auto z-[110] hidden
+        bg-white dark:bg-slate-900 rounded-t-3xl
+        shadow-[0_-10px_40px_rgba(0,0,0,0.25)]
+        transform translate-y-full transition-transform duration-300 ease-out
+        flex flex-col h-auto">
+    <!-- Drag handle (mobile) / visual accent (desktop) -->
+    <div class="w-full flex justify-center pt-3 pb-1">
+      <div class="w-10 h-1 bg-slate-300 dark:bg-slate-600 rounded-full"></div>
+    </div>
+    <!-- Title + Close -->
+    <div class="px-5 pb-3 flex items-center justify-between">
+      <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-200" data-i18n="inspect.sheet_title">Inspect
+        Share</h3>
+      <button id="inspect-sheet-close" type="button"
+        class="p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+          class="lucide lucide-x">
+          <path d="M18 6 6 18" />
+          <path d="m6 6 12 12" />
+        </svg>
+      </button>
+    </div>
+    <!-- Sheet content -->
+    <div class="px-5 pb-6">
+      <!-- 2x2 Inspect Options Grid -->
+      <div id="inspect-options-grid" class="space-y-3">
+        <!-- Scan QR Code -->
+        <button type="button" id="inspect-card-scan"
+          class="w-full flex items-center gap-4 p-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 active:scale-[0.98] transition-all">
+          <div class="flex-shrink-0 w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+              class="text-blue-600 dark:text-blue-400">
+              <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" />
+              <circle cx="12" cy="13" r="3" />
+            </svg>
+          </div>
+          <div class="text-left">
+            <h4 class="font-medium text-slate-800 dark:text-slate-200" data-i18n="reconstruct.inspect_scan">Scan QR Code</h4>
+            <p class="text-xs text-slate-500 dark:text-slate-400" data-i18n="reconstruct.inspect_scan_desc">Use camera to scan</p>
+          </div>
+        </button>
+        <!-- Read NFC Tag -->
+        <button type="button" id="inspect-card-nfc"
+          class="w-full flex items-center gap-4 p-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 active:scale-[0.98] transition-all">
+          <div class="flex-shrink-0 w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+              class="text-blue-600 dark:text-blue-400">
+              <path d="M6 8.32a7.43 7.43 0 0 1 0 7.36" />
+              <path d="M9.46 6.21a11.76 11.76 0 0 1 0 11.58" />
+              <path d="M12.91 4.1a15.91 15.91 0 0 1 .01 15.8" />
+              <path d="M16.37 2a20.16 20.16 0 0 1 0 20" />
+            </svg>
+          </div>
+          <div class="text-left">
+            <h4 class="font-medium text-slate-800 dark:text-slate-200" data-i18n="inspect.nfc_scan_btn">Read NFC Tag</h4>
+            <p class="text-xs text-slate-500 dark:text-slate-400" data-i18n="inspect.nfc_scan_desc">Scan hardware tags</p>
+          </div>
+        </button>
+        <!-- Paste Share -->
+        <button type="button" id="inspect-card-paste"
+          class="w-full flex items-center gap-4 p-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 active:scale-[0.98] transition-all">
+          <div class="flex-shrink-0 w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+              class="text-blue-600 dark:text-blue-400">
+              <path d="M11 14h10" />
+              <path d="M16 4h2a2 2 0 0 1 2 2v1.344" />
+              <path d="m17 18 4-4-4-4" />
+              <path d="M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 1.793-1.113" />
+              <rect x="8" y="2" width="8" height="4" rx="1" />
+            </svg>
+          </div>
+          <div class="text-left">
+            <h4 class="font-medium text-slate-800 dark:text-slate-200" data-i18n="inspect.paste_share">Paste Share</h4>
+            <p class="text-xs text-slate-500 dark:text-slate-400" data-i18n="inspect.paste_share_desc">Paste a share to inspect</p>
+          </div>
+        </button>
+      </div>
+      <!-- Manual Entry Paste Area (hidden by default) -->
+      <div id="inspect-paste-area" class="hidden mt-4 space-y-3">
+        <button type="button" id="inspect-paste-back"
+          class="inline-flex items-center text-sm text-blue-600 dark:text-blue-400 hover:underline mb-1">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+            class="lucide lucide-arrow-left mr-1">
+            <path d="m12 19-7-7 7-7" />
+            <path d="M19 12H5" />
+          </svg>
+          <span data-i18n="inspect.back">Back</span>
+        </button>
+        <label for="inspect-share-input" class="block text-sm font-medium text-slate-700 dark:text-slate-300"
+          data-i18n="reconstruct.inspect_paste_label">Paste Share to Inspect</label>
+        <textarea id="inspect-share-input" placeholder="Paste Base64 encoded share here"
+          data-i18n="reconstruct.inspect_paste_placeholder"
+          class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-700 dark:text-slate-100"
+          rows="4"></textarea>
+        <p id="inspect-qr-status" class="text-center text-sm text-blue-600 dark:text-blue-400 hidden"></p>
+        <div class="grid grid-cols-2 gap-3">
+          <button type="button" id="inspect-clear-input-button"
+            class="hover:-translate-y-0.5 active:scale-95 transition-all duration-200 w-full inline-flex justify-center items-center px-4 py-2 border border-slate-300 dark:border-slate-600 text-sm font-medium rounded-md shadow-sm text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-700 hover:bg-slate-50 dark:hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-slate-800">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+              class="lucide lucide-eraser mr-2">
+              <path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21" />
+              <path d="M22 21H7" />
+              <path d="m5 11 9 9" />
+            </svg>
+            <span data-i18n="reconstruct.recon_clear_btn">Clear</span>
+          </button>
+          <button id="inspect-submit-btn"
+            class="hover:-translate-y-0.5 active:scale-95 transition-all duration-200 w-full inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-slate-800">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+              class="lucide lucide-search mr-2">
+              <circle cx="11" cy="11" r="8" />
+              <path d="m21 21-4.3-4.3" />
+            </svg>
+            <span data-i18n="reconstruct.inspect_btn">Inspect Share Data</span>
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+
+    <!-- Result Presentation Modal -->
+  <div id="result-modal-backdrop"
+    class="fixed inset-0 bg-slate-900/80 z-[100] hidden opacity-0 transition-opacity duration-300 backdrop-blur-md">
+  </div>
+  <div id="result-presentation-modal"
+    class="fixed bottom-0 inset-x-0 max-w-xl mx-auto z-[120] hidden
+        bg-white dark:bg-slate-900 rounded-t-3xl
+        shadow-[0_-10px_40px_rgba(0,0,0,0.25)]
+        transform translate-y-full transition-transform duration-300 ease-out
+        flex flex-col max-h-[85vh] overflow-hidden">
+    <!-- Drag handle -->
+    <div class="w-full flex justify-center pt-3 pb-1 shrink-0">
+      <div class="w-10 h-1 bg-slate-300 dark:bg-slate-600 rounded-full"></div>
+    </div>
+    <!-- Header -->
+    <div
+      class="flex items-center justify-between px-5 pb-3 border-b border-slate-200 dark:border-slate-700 shrink-0">
+      <div class="flex items-center gap-2">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+          class="lucide lucide-shield-check text-emerald-500">
+          <path
+            d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" />
+          <path d="m9 12 2 2 4-4" />
+        </svg>
+        <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-200" data-i18n="inspect.share_details">
+          Share Details</h3>
+      </div>
+      <button id="result-modal-close-x" type="button"
+        class="p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+          class="lucide lucide-x">
+          <path d="M18 6 6 18" />
+          <path d="m6 6 12 12" />
+        </svg>
+      </button>
+    </div>
+    <!-- Scrollable Content -->
+    <div class="flex-1 overflow-y-auto p-6">
+      <div id="inspect-result" class="text-sm space-y-2 text-slate-700 dark:text-slate-300"></div>
+      <div id="recon-result" class="space-y-1 text-sm text-slate-700 dark:text-slate-300">
+        <div id="recon-details" class="space-y-1 text-sm text-slate-700 dark:text-slate-300">
+          <p class="mb-1"><strong><span data-i18n="reconstruct.secret_label">Secret:</span></strong></p>
+          <div id="recon-secret-pill" class="flex items-center justify-between bg-slate-100 dark:bg-slate-800 rounded-lg px-3 py-2.5 cursor-pointer group transition-all hover:bg-slate-200 dark:hover:bg-slate-700 active:scale-[0.98]">
+            <span id="recon-password" class="font-mono text-sm text-slate-800 dark:text-slate-200 break-all select-all">••••••••</span>
+            <svg id="recon-secret-eye" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+              class="lucide lucide-eye text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300 shrink-0 ml-3 transition-colors">
+              <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path>
+              <circle cx="12" cy="12" r="3"></circle>
+            </svg>
+          </div>
+          <p><strong><span data-i18n="reconstruct.comment_label">Comment:</span></strong> <span
+              id="recon-note"></span></p>
+          <p><strong><span data-i18n="inspect.created">Created:</span></strong> <span id="recon-date"></span></p>
+          <div id="recon-stats" class="mt-2 pt-2 border-t border-slate-200 dark:border-slate-700">
+            <p><strong><span data-i18n="inspect.version">Cryptographic parameters:</span></strong> <span
+                id="recon-version-span"></span></p>
+            <p><strong><span data-i18n="print.family_id">Set ID:</span></strong> <span
+                id="recon-family-span"></span></p>
+            <p><strong><span data-i18n="inspect.total_shares">Total Shares (N):</span></strong> <span
+                id="recon-n-span"></span></p>
+            <p><strong><span data-i18n="inspect.threshold">Threshold (K):</span></strong> <span
+                id="recon-k-span"></span></p>
+            <p><strong><span data-i18n="inspect.encryption_status">Password protection:</span></strong> <span
+                id="recon-pw-status-span"></span></p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+    <!-- Bottom Safe Area -->
+    <div class="shrink-0 px-5 pb-5 pt-3 border-t border-slate-200 dark:border-slate-700">
+      <button id="copy-secret-btn"
+        class="w-full py-3.5 bg-blue-600 hover:bg-blue-700 active:scale-[0.98] transition-all duration-200 text-white font-semibold rounded-xl mb-3 flex items-center justify-center gap-2 shadow-sm">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+          class="lucide lucide-clipboard-copy">
+          <rect width="8" height="4" x="8" y="2" rx="1" ry="1"></rect>
+          <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+          <path d="M12 11v6"></path>
+          <path d="m9 14 3-3 3 3"></path>
+        </svg>
+        <span id="copy-secret-text" data-i18n="reconstruct.copy_secret">Copy Secret</span>
+      </button>
+      <button id="result-modal-close-btn" type="button"
+        class="w-full py-3.5 bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 active:scale-[0.98] transition-all duration-200 text-slate-700 dark:text-slate-300 font-semibold rounded-xl"
+        data-i18n="inspect.done">Done</button>
+    </div>
+  </div>
+
+
+  <!-- Reconstruct Paste Sheet Backdrop -->
+  <div id="recon-paste-backdrop"
+    class="fixed inset-0 bg-black/50 z-[100] hidden opacity-0 transition-opacity duration-300 backdrop-blur-sm">
+  </div>
+  <!-- Reconstruct Paste Sheet -->
+  <div id="recon-paste-sheet" class="fixed bottom-0 inset-x-0 max-w-xl mx-auto z-[110] hidden
+        bg-white dark:bg-slate-900 rounded-t-3xl
+        shadow-[0_-10px_40px_rgba(0,0,0,0.25)]
+        transform translate-y-full transition-transform duration-300 ease-out
+        flex flex-col max-h-[85vh]">
+    <!-- Drag handle -->
+    <div class="w-full flex justify-center pt-3 pb-1 shrink-0">
+      <div class="w-10 h-1 bg-slate-300 dark:bg-slate-600 rounded-full"></div>
+    </div>
+    <div class="px-5 pb-3 flex items-center justify-between shrink-0">
+      <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-200" data-i18n="reconstruct.paste_tab">Paste Shares</h3>
+      <button id="recon-paste-sheet-close" type="button"
+        class="p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+          class="lucide lucide-x"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
+      </button>
+    </div>
+    <div class="px-5 pb-6 overflow-y-auto flex-1">
+      <label for="recon-shares" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1"
+        data-i18n="reconstruct.paste_label">Paste Shares (one per line)</label>
+      <textarea id="recon-shares"
+        class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-700 dark:text-slate-100 share-text"
+        rows="6" placeholder="Paste Base64 encoded shares here, one per line..."
+        data-i18n="reconstruct.paste_placeholder"></textarea>
+      <p id="paste-shares-status" class="text-blue-600 dark:text-blue-400 mt-2 text-sm hidden"></p>
+      <!-- Legacy password field removed — Action Sheet handles encryption -->
+      <!-- Actions -->
+      <div class="grid grid-cols-2 gap-3 mt-4">
+        <button type="button" id="recon-paste-clear"
+          class="hover:-translate-y-0.5 active:scale-95 transition-all duration-200 w-full inline-flex justify-center items-center px-4 py-2.5 border border-slate-300 dark:border-slate-600 text-sm font-medium rounded-lg shadow-sm text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-700 hover:bg-slate-50 dark:hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-slate-800">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-eraser mr-1.5 shrink-0"><path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"/><path d="M22 21H7"/><path d="m5 11 9 9"/></svg>
+          <span data-i18n="reconstruct.recon_clear_btn">Clear</span>
+        </button>
+        <button type="button" id="recon-paste-submit"
+          class="hover:-translate-y-0.5 active:scale-95 transition-all duration-200 w-full inline-flex justify-center items-center px-4 py-2.5 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-slate-800">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-key-round mr-1.5 shrink-0"><path d="M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z"/><circle cx="16.5" cy="7.5" r=".5" fill="currentColor"/></svg>
+          <span data-i18n="reconstruct.paste_submit_btn">Reconstruct</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Reconstruct CSV Sheet Backdrop -->
+  <div id="recon-csv-backdrop"
+    class="fixed inset-0 bg-black/50 z-[100] hidden opacity-0 transition-opacity duration-300 backdrop-blur-sm">
+  </div>
+  <!-- Reconstruct CSV Sheet -->
+  <div id="recon-csv-sheet" class="fixed bottom-0 inset-x-0 max-w-xl mx-auto z-[110] hidden
+        bg-white dark:bg-slate-900 rounded-t-3xl
+        shadow-[0_-10px_40px_rgba(0,0,0,0.25)]
+        transform translate-y-full transition-transform duration-300 ease-out
+        flex flex-col max-h-[85vh]">
+    <!-- Drag handle -->
+    <div class="w-full flex justify-center pt-3 pb-1 shrink-0">
+      <div class="w-10 h-1 bg-slate-300 dark:bg-slate-600 rounded-full"></div>
+    </div>
+    <div class="px-5 pb-3 flex items-center justify-between shrink-0">
+      <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-200" data-i18n="reconstruct.csv_tab">Upload CSV</h3>
+      <button id="recon-csv-sheet-close" type="button"
+        class="p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+          class="lucide lucide-x"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
+      </button>
+    </div>
+    <div class="px-5 pb-6 overflow-y-auto flex-1">
+      <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1"
+        data-i18n="reconstruct.csv_upload_label">Upload Shares (CSV file)</label>
+      <div class="relative w-full">
+        <input type="file" id="recon-file" accept=".csv,text/csv,text/comma-separated-values,application/csv" class="hidden">
+        <label for="recon-file" id="recon-file-select-label"
+          class="flex items-center justify-center w-full px-4 py-3 bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 rounded-md border-2 border-dashed border-blue-300 dark:border-blue-500 hover:bg-blue-50 dark:hover:bg-slate-600 cursor-pointer transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+            class="lucide lucide-upload-cloud mr-2">
+            <path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"></path>
+            <path d="M12 12v9"></path>
+            <path d="m16 16-4-4-4 4"></path>
+          </svg>
+          <span data-i18n="reconstruct.csv_choose_file" class="font-medium">Select CSV File</span>
+        </label>
+        <!-- File selected chip (hidden by default) -->
+        <div id="recon-file-chip" class="hidden flex items-center justify-between w-full px-3 py-2.5 bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-300 dark:border-emerald-600 rounded-lg transition-all">
+          <div class="flex items-center gap-2 min-w-0">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+              class="text-emerald-600 dark:text-emerald-400 shrink-0">
+              <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path>
+              <path d="M14 2v4a2 2 0 0 0 2 2h4"></path>
+            </svg>
+            <span id="recon-file-name" class="text-sm font-medium text-emerald-700 dark:text-emerald-300 truncate"></span>
+          </div>
+          <button id="recon-file-remove" type="button"
+            class="shrink-0 ml-2 p-1 rounded-full text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors active:scale-90">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18 6 6 18"></path>
+              <path d="m6 6 12 12"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+      <div class="mt-2">
+        <a href="#" id="download-csv-template" data-i18n="reconstruct.csv_template"
+          class="text-xs text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+            class="lucide lucide-download-cloud">
+            <path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"></path>
+            <path d="M12 12v9"></path>
+            <path d="m8 17 4 4 4-4"></path>
+          </svg>
+          Download CSV Template
+        </a>
+      </div>
+      <!-- Legacy password field removed — Action Sheet handles encryption -->
+      <!-- Actions -->
+      <div class="grid grid-cols-2 gap-3 mt-4">
+        <button type="button" id="recon-csv-clear"
+          class="hover:-translate-y-0.5 active:scale-95 transition-all duration-200 w-full inline-flex justify-center items-center px-4 py-2.5 border border-slate-300 dark:border-slate-600 text-sm font-medium rounded-lg shadow-sm text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-700 hover:bg-slate-50 dark:hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-slate-800">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-eraser mr-1.5 shrink-0"><path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"/><path d="M22 21H7"/><path d="m5 11 9 9"/></svg>
+          <span data-i18n="reconstruct.recon_clear_btn">Clear</span>
+        </button>
+        <button type="button" id="recon-csv-submit"
+          class="hover:-translate-y-0.5 active:scale-95 transition-all duration-200 w-full inline-flex justify-center items-center px-4 py-2.5 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-slate-800">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-key-round mr-1.5 shrink-0"><path d="M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z"/><circle cx="16.5" cy="7.5" r=".5" fill="currentColor"/></svg>
+          <span data-i18n="reconstruct.csv_submit_btn">Reconstruct</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Unified Loading Action Sheet Backdrop -->
+  <div id="loading-action-backdrop"
+    class="fixed inset-0 bg-black/50 z-[120] hidden opacity-0 transition-opacity duration-300 backdrop-blur-sm">
+  </div>
+  <!-- Unified Loading Action Sheet -->
+  <div id="loading-action-sheet" class="fixed bottom-0 inset-x-0 max-w-xl mx-auto z-[130] hidden
+        bg-white dark:bg-slate-900 rounded-t-3xl
+        shadow-[0_-10px_40px_rgba(0,0,0,0.25)]
+        transform translate-y-full transition-transform duration-300 ease-out
+        flex flex-col">
+    <!-- Drag handle (visual only) -->
+    <div class="w-full flex justify-center pt-3 pb-1 shrink-0">
+      <div class="w-10 h-1 bg-slate-300 dark:bg-slate-600 rounded-full"></div>
+    </div>
+    <!-- Content -->
+    <div class="px-6 pb-6 pt-4 flex flex-col items-center justify-center gap-4">
+      <!-- Spinning loader SVG -->
+      <div class="relative w-16 h-16">
+        <svg class="animate-spin w-16 h-16 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2.5"></circle>
+          <path class="opacity-75" fill="currentColor"
+            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+          </path>
+        </svg>
+        <!-- Inner lock icon -->
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+          class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-blue-400">
+          <rect width="18" height="11" x="3" y="11" rx="2" ry="2"></rect>
+          <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+        </svg>
+      </div>
+      <div class="text-center">
+        <h3 id="loading-action-text" class="text-lg font-semibold text-slate-800 dark:text-slate-200">Processing...</h3>
+        <p id="loading-action-subtitle" class="text-sm text-slate-500 dark:text-slate-400 mt-1">Securing with Two-Factor Encryption...</p>
+      </div>
+      <!-- Cancel Button -->
+      <button id="loading-cancel-btn" type="button"
+        class="mt-1 w-full max-w-xs inline-flex justify-center items-center px-4 py-2.5 border border-slate-300 dark:border-slate-600 text-sm font-medium rounded-xl shadow-sm text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-400 transition-all duration-200 active:scale-95">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2">
+          <circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/>
+        </svg>
+        <span data-i18n="loading.cancel_btn">Cancel</span>
+      </button>
+    </div>
+  </div>
+
+
+</body>
+
+</html>

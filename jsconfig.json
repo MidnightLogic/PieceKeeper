@@ -1,0 +1,10 @@
+{
+    "compilerOptions": {
+        "checkJs": false,
+        "target": "es2022",
+        "moduleResolution": "node"
+    },
+    "include": [
+        "src/**/*"
+    ]
+}

@@ -1,0 +1,25 @@
+# Dependencies
+node_modules
+
+# Agent/IDE config
+.agents/
+
+# Build output
+dist
+
+# Environment
+.env
+.env.*
+
+# Vite cache
+src/node_modules
+
+# Dev-only utilities
+dev/
+
+# Temp scripts
+*.cjs
+!postcss.config.js
+!eslint.config.js
+!vite.config.js
+dev

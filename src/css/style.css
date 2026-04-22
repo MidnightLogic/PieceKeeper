@@ -1,0 +1,199 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom styles */
+        body {
+            /* Tailwind native typography */
+            /* Default font */
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        /* Hide scrollbar for tabs */
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+
+        .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        /* Style for monospace share text */
+        .share-text {
+            font-family: monospace;
+            word-break: break-all;
+            font-size: 0.875rem;
+            /* Equivalent to text-sm */
+        }
+
+        /* Style for the QR scanner video element */
+        #qr-scanner video {
+            transform: scaleX(-1);
+            /* Mirror the camera feed */
+            border-radius: 0.5rem;
+            /* Rounded corners */
+            border: 1px solid #ccc;
+            width: 100%;
+            height: auto;
+            max-height: 300px;
+            /* Limit height */
+        }
+
+        /* Style for log panel */
+        .log-panel {
+            font-size: 0.875rem;
+        }
+
+        /* Style for active tab */
+        .tab-button.active {
+            border-color: #3b82f6;
+            /* blue-500 */
+            color: #3b82f6;
+            font-weight: 600;
+        }
+
+        /* Style for inactive tab */
+        .tab-button {
+            border-color: transparent;
+        }
+
+        /* Style for reconstruction option cards */
+        .recon-option {
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .recon-option:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+        }
+
+        .recon-option.selected {
+            border-color: #3b82f6;
+            /* blue-500 */
+            background-color: #eff6ff;
+            /* blue-50 */
+        }
+
+        /* Dark mode specific styles */
+        .dark .recon-option.selected {
+            background-color: #1f2937;
+            /* slate-800 */
+            border-color: #60a5fa;
+            /* blue-400 */
+        }
+
+        .dark .tab-button.active {
+            border-color: #60a5fa;
+            /* blue-400 */
+            color: #60a5fa;
+        }
+
+        /* Custom toast notification styles */
+        /* Toast styles eradicated */
+
+
+        .toast {
+            display: flex;
+            align-items: flex-start;
+            padding: 0.75rem 1rem;
+            border-radius: 0.375rem;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+            opacity: 0;
+            /* transform: translateY(1rem); */
+            /* OLD for bottom slide-up */
+            transform: translateY(-2rem);
+            /* NEW for top slide-down, start off-screen upwards */
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+            /* NEW for top slide-down, slide into view */
+        }
+
+        .toast-success {
+            background-color: #dcfce7;
+            /* green-100 */
+            color: #166534;
+            /* green-800 */
+            border: 1px solid #86efac;
+            /* green-300 */
+        }
+
+        .toast-error {
+            background-color: #fee2e2;
+            /* red-100 */
+            color: #991b1b;
+            /* red-800 */
+            border: 1px solid #fca5a5;
+            /* red-300 */
+        }
+
+        .toast-info {
+            background-color: #e0f2fe;
+            /* sky-100 */
+            color: #075985;
+            /* sky-800 */
+            border: 1px solid #7dd3fc;
+            /* sky-300 */
+        }
+
+        /* Ensure warn style is opaque for dark mode */
+        .toast-warn {
+            background-color: #fef3c7;
+            /* Tailwind yellow-100 */
+            color: #92400e;
+            /* Tailwind amber-700 or similar */
+            border: 1px solid #fcd34d;
+            /* Tailwind yellow-400 */
+        }
+        
+        /* Enforce absolute string breaking on dense cryptographic structures natively so we do not rely on JIT Javascipt string arrays */
+        .toast span {
+            word-break: break-word;
+            overflow-wrap: break-word; /* Critical for long UUIDs */
+        }
+
+        .toast .lucide {
+            margin-right: 0.5rem;
+        }
+
+        /* Animation for loading spinner */
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .animate-spin {
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20% { transform: translateX(-6px); }
+            40% { transform: translateX(6px); }
+            60% { transform: translateX(-4px); }
+            80% { transform: translateX(4px); }
+        }
+
+        .animate-shake {
+            animation: shake 0.4s ease-in-out;
+        }
+@media print {
+  body { background: white !important; color: black !important; }
+  nav, button, #tab-buttons, .recon-option, input, textarea, select { display: none !important; }
+  #gen-shares { display: block !important; }
+  #gen-shares > div, #gen-shares > p { 
+    border: 1px dashed #666 !important; 
+    padding: 15px !important; 
+    margin-bottom: 15px !important; 
+    page-break-inside: avoid;
+    font-family: monospace;
+    font-size: 14pt;
+    word-break: break-all;
+  }
+}
