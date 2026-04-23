@@ -1,3 +1,11 @@
+/** 
+* Copyright 2026 Craig Bailey
+* Repository: https://github.com/MidnightLogic/PieceKeeper
+*
+* Licensed under the Apache License, Version 2.0
+* SPDX-License-Identifier: Apache-2.0
+*/
+
 import {EXPORT_MODE, RECONSTRUCT_MODE, AppEvents, isSoundEnabled, isTesting, currentReconMode, isScanning, isScanningForInspect, currentScanningPurpose, nfcAbortController, currentNfcPurpose, reconstructionPasswordCallback, lastInspectedShareForPasswordPrompt, firstScannedShareEncryptedStatus, isProcessingSuccessfulReconstruction, currentReconstructionFamilyId, isFamilyMismatchFeedbackCooldown, isGenSharesDelegationAttached, githubQrDataUrl, reconstructionPassword, passwordPromptContext, pendingInspectShareString, scannedRawSharesSet, requiredK, sharePendingKDetermination, sharePendingKDeterminationNfc, sharePendingKDeterminationManual, reconstructedSecretData, currentGeneratedShares, lastGeneratedN, lastGeneratedK, qrScannerInstance, isAutoClearingForm, activeEngineAbortController, resetReconstructionState} from './store.js';
 import { playBeep, triggerHaptic, playSuccessSound, playPasswordPromptSound } from './ui.js';
 import { executeShamirReconstruction } from './crypto.js';
