@@ -1,3 +1,13 @@
+/**
+ * PieceKeeper Cryptographic Test Definitions
+ * 
+ * This module abstracts the core cryptographic mathematical regressions.
+ * It uses dependency injection to pull in the operational `engine` handles
+ * (generateShares, reconstructSecret) directly from the application's root closure.
+ * 
+ * To add a new test, simply append a definition block to `pieceKeeperTests`.
+ */
+
 import {isSoundEnabled, isAutoClearingForm, isScanning, isScanningForInspect, currentScanningPurpose, nfcAbortController, currentNfcPurpose, reconstructionPasswordCallback, lastInspectedShareForPasswordPrompt, firstScannedShareEncryptedStatus, isProcessingSuccessfulReconstruction, currentReconstructionFamilyId, isFamilyMismatchFeedbackCooldown, isGenSharesDelegationAttached, githubQrDataUrl, reconstructionPassword, passwordPromptContext, pendingInspectShareString, scannedRawSharesSet, requiredK, sharePendingKDetermination, sharePendingKDeterminationNfc, reconstructedSecretData, currentGeneratedShares, lastGeneratedN, lastGeneratedK, qrScannerInstance} from './store.js';
 import { printSingleShare, emailSingleShare } from './main.js';
 import { startNfcMintingFlow, requestNfcPermission, showPasswordPrompt } from './hardware.js';
