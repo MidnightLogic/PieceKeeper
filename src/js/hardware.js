@@ -1,3 +1,11 @@
+/** 
+* Copyright 2026 Craig Bailey
+* Repository: https://github.com/MidnightLogic/PieceKeeper
+*
+* Licensed under the Apache License, Version 2.0
+* SPDX-License-Identifier: Apache-2.0
+*/
+
 let lastScanTime = 0;
 import { SCANNER_PURPOSE, RECONSTRUCT_MODE, AppEvents, isSoundEnabled, isScanning, isScanningForInspect, currentScanningPurpose, nfcAbortController, currentNfcPurpose, reconstructionPasswordCallback, lastInspectedShareForPasswordPrompt, firstScannedShareEncryptedStatus, isProcessingSuccessfulReconstruction, currentReconstructionFamilyId, isFamilyMismatchFeedbackCooldown, isGenSharesDelegationAttached, passwordPromptContext, pendingInspectShareString, reconstructionPassword, scannedRawSharesSet, requiredK, sharePendingKDetermination, sharePendingKDeterminationNfc, reconstructedSecretData, currentGeneratedShares, lastGeneratedN, lastGeneratedK, qrScannerInstance, resetReconstructionState } from './store.js';
 import { i18n } from './i18n.js';
