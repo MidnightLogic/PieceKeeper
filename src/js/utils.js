@@ -1,3 +1,13 @@
+/**
+ * PieceKeeper Cryptographic Test Definitions
+ * 
+ * This module abstracts the core cryptographic mathematical regressions.
+ * It uses dependency injection to pull in the operational `engine` handles
+ * (generateShares, reconstructSecret) directly from the application's root closure.
+ * 
+ * To add a new test, simply append a definition block to `pieceKeeperTests`.
+ */
+
 import { logger } from './logger.js';
 import { i18n } from './i18n.js';
 
