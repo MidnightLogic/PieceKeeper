@@ -1,3 +1,11 @@
+/** 
+* Copyright 2026 Craig Bailey
+* Repository: https://github.com/MidnightLogic/PieceKeeper
+*
+* Licensed under the Apache License, Version 2.0
+* SPDX-License-Identifier: Apache-2.0
+*/
+
 import { argon2id, scrypt } from 'hash-wasm';
 
 self.onmessage = async (event) => {
