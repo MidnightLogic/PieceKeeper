@@ -3,7 +3,7 @@
   <p><strong>Distribute secrets. Eliminate single points of failure.</strong></p>
   <p>An offline-first implementation of <a href="https://en.wikipedia.org/wiki/Shamir%27s_secret_sharing">Shamir's Secret Sharing</a>, compiled into a single HTML file.</p>
 
-  ![License](https://img.shields.io/badge/license-APACHE-blue)
+  ![License](https://img.shields.io/badge/license-Apache%20License%202.0-blue)
   ![Version](https://img.shields.io/badge/version-1.0.1-green)
   ![PWA](https://img.shields.io/badge/PWA-installable-blueviolet)
   ![Network](https://img.shields.io/badge/network-zero%20requests-brightgreen)
