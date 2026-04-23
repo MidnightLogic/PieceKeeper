@@ -46,6 +46,21 @@ A pre-compiled deployment is available via GitHub Pages:
 
 ---
 
+## ✨ Features
+
+*   **Flexible Thresholds (K of N):** Split a secret into up to 64 shares with any threshold you define (e.g., 3-of-5, 4-of-8).
+*   **Two-Factor Password Protection:** Optionally encrypt shares with a master password. Reconstruction requires both the physical shares and the password.
+*   **QR Code Generation & Scanning:** Generate printable QR codes for each share. Scan them back using the built-in camera scanner—no keyboard input needed.
+*   **NFC Tag Support:** Write shares directly to NFC tags and read them back with a simple tap. Ideal for hardware-grade distribution. (Note: NFC features are currently only supported on Chrome for Android).
+*   **Print-Ready PDF Layout:** One-click printing with share metadata, QR codes, and clearly formatted instructions.
+*   **21 Languages:** Fully internationalized interface covering English, Spanish, French, German, Italian, Dutch, Polish, Portuguese, Russian, Turkish, Arabic, Hindi, Bengali, Thai, Vietnamese, Indonesian, Japanese, Korean, Hebrew, and Chinese (Simplified + Traditional).
+*   **Progressive Web App:** Installable on iOS and Android as a standalone application with full offline capability.
+*   **Dark Mode, Audio Feedback, Haptic Feedback, RTL Support:** Configurable theme, optional UI sounds, haptic feedback, and right-to-left layout for Arabic and Hebrew.
+*   **Desktop Width Toggle:** Switchable between compact app-like layout and wide desktop layout, with preference persistence.
+*   **Built-in Diagnostic Suite:** Run internal cryptographic self-tests to verify your device's compatibility before generating shares.
+
+---
+
 ## 🔒 Core Philosophy
 
 *   **Single-File, Zero Dependencies:** The build compiles all application logic, cryptographic libraries, stylesheets, translations, and icons into one portable HTML file. Store it on a USB drive, print it to paper, or vault it anywhere.
@@ -161,21 +176,6 @@ When a password is provided:
 After every cryptographic operation, all intermediate byte arrays (`passwordBytes`, `secretBytes`, `checksumBytes`, polynomial coefficients) are zeroed via `.fill(0)`. This minimises the window during which sensitive material exists in JavaScript heap memory.
 
 </details>
-
----
-
-## ✨ Features
-
-*   **Flexible Thresholds (K of N):** Split a secret into up to 64 shares with any threshold you define (e.g., 3-of-5, 4-of-8).
-*   **Two-Factor Password Protection:** Optionally encrypt shares with a master password. Reconstruction requires both the physical shares and the password.
-*   **QR Code Generation & Scanning:** Generate printable QR codes for each share. Scan them back using the built-in camera scanner—no keyboard input needed.
-*   **NFC Tag Support:** Write shares directly to NFC tags and read them back by tapping. Ideal for hardware-grade distribution.
-*   **Print-Ready PDF Layout:** One-click printing with share metadata, QR codes, and instructions formatted for A4 paper.
-*   **21 Languages:** Fully internationalized interface covering English, Spanish, French, German, Italian, Dutch, Polish, Portuguese, Russian, Turkish, Arabic, Hindi, Bengali, Thai, Vietnamese, Indonesian, Japanese, Korean, Hebrew, and Chinese (Simplified + Traditional).
-*   **Progressive Web App:** Installable on iOS and Android as a standalone application with full offline capability.
-*   **Dark Mode, Audio Feedback, Haptic Feedback, RTL Support:** Configurable theme, optional UI sounds, haptic feedback, and right-to-left layout for Arabic and Hebrew.
-*   **Desktop Width Toggle:** Switchable between compact app-like layout and wide desktop layout, with preference persistence.
-*   **Built-in Diagnostic Suite:** Run internal cryptographic self-tests to verify your device's compatibility before generating shares.
 
 ---
 
