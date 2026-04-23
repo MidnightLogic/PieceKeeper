@@ -247,4 +247,4 @@ Note: Because the application is configured for GitHub Pages routing, you must a
 
 ## 📜 License
 
-MIT License. See [LICENSE](LICENSE) for details.
+Apache 2.0 License. See [LICENSE](LICENSE) for details.
