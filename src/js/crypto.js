@@ -1,3 +1,11 @@
+/** 
+* Copyright 2026 Craig Bailey
+* Repository: https://github.com/MidnightLogic/PieceKeeper
+*
+* Licensed under the Apache License, Version 2.0
+* SPDX-License-Identifier: Apache-2.0
+*/
+
 import {scannedRawSharesSet, requiredK, sharePendingKDetermination, sharePendingKDeterminationNfc, reconstructedSecretData, currentGeneratedShares, lastGeneratedN, lastGeneratedK} from './store.js';
 import { safeTranslate } from './utils.js';
 import { logger } from './logger.js';
