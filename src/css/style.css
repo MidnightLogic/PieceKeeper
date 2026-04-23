@@ -2,6 +2,13 @@
 @tailwind components;
 @tailwind utilities;
 
+/* CSS-based password masking — prevents Chrome credential manager detection */
+input[data-secret-mask] {
+    -webkit-text-security: disc;
+    -moz-text-security: disc;
+    text-security: disc;
+}
+
 /* Custom styles */
         body {
             /* Tailwind native typography */

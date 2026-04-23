@@ -147,7 +147,12 @@ export const setPasswordVisibility = (inputId, btn, isVisible) => {
     const input = document.getElementById(inputId);
     if (!input) return;
 
-    input.type = isVisible ? 'text' : 'password';
+    // Toggle CSS-based masking via data attribute (avoids Chrome credential detection)
+    if (isVisible) {
+        input.removeAttribute('data-secret-mask');
+    } else {
+        input.setAttribute('data-secret-mask', '');
+    }
 
     const svg = btn.querySelector('svg');
     if (!svg) return;
