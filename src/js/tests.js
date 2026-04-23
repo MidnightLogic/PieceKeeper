@@ -1,4 +1,11 @@
-import { githubQrDataUrl, scannedRawSharesSet, requiredK, sharePendingKDetermination, sharePendingKDeterminationNfc, reconstructedSecretData, currentGeneratedShares, lastGeneratedN, lastGeneratedK, qrScannerInstance } from './store.js';
+/** 
+* Copyright 2026 Craig Bailey
+* Repository: https://github.com/MidnightLogic/PieceKeeper
+*
+* Licensed under the Apache License, Version 2.0
+* SPDX-License-Identifier: Apache-2.0
+*/
+
 /**
  * PieceKeeper Cryptographic Test Definitions
  * 
@@ -9,6 +16,7 @@ import { githubQrDataUrl, scannedRawSharesSet, requiredK, sharePendingKDetermina
  * To add a new test, simply append a definition block to `pieceKeeperTests`.
  */
 
+import { githubQrDataUrl, scannedRawSharesSet, requiredK, sharePendingKDetermination, sharePendingKDeterminationNfc, reconstructedSecretData, currentGeneratedShares, lastGeneratedN, lastGeneratedK, qrScannerInstance } from './store.js';
 import { createCryptographicShares, executeShamirReconstruction } from './crypto.js';
 import { APP_CONFIG } from './config.js';
 
