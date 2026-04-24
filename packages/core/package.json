@@ -1,0 +1,62 @@
+{
+    "name": "@midnightlogic/piecekeeper-crypto",
+    "version": "1.0.0",
+    "description": "Isomorphic Shamir's Secret Sharing + AES-256-GCM encryption. Split secrets, reconstruct with threshold — works in Node.js and browsers.",
+    "author": "MidnightLogic",
+    "license": "MIT",
+    "type": "module",
+    "main": "./dist/index.cjs",
+    "module": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+        ".": {
+            "import": {
+                "types": "./dist/index.d.ts",
+                "default": "./dist/index.js"
+            },
+            "require": {
+                "types": "./dist/index.d.cts",
+                "default": "./dist/index.cjs"
+            }
+        }
+    },
+    "files": [
+        "dist",
+        "README.md"
+    ],
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/MidnightLogic/PieceKeeper.git",
+        "directory": "packages/core"
+    },
+    "homepage": "https://github.com/MidnightLogic/PieceKeeper/tree/main/packages/core",
+    "bugs": {
+        "url": "https://github.com/MidnightLogic/PieceKeeper/issues"
+    },
+    "keywords": [
+        "shamir",
+        "secret-sharing",
+        "cryptography",
+        "aes-256-gcm",
+        "argon2id",
+        "threshold",
+        "isomorphic",
+        "encryption"
+    ],
+    "engines": {
+        "node": ">=18.0.0"
+    },
+    "scripts": {
+        "build": "tsup",
+        "test": "vitest run",
+        "test:watch": "vitest",
+        "prepublishOnly": "npm run build"
+    },
+    "dependencies": {
+        "hash-wasm": "^4.12.0"
+    },
+    "devDependencies": {
+        "tsup": "^8.0.0",
+        "vitest": "^4.1.2"
+    }
+}

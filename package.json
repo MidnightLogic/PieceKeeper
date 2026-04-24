@@ -4,6 +4,7 @@
   "description": "Distribute secrets. Eliminate single points of failure.",
   "author": "MidnightLogic",
   "license": "MIT",
+  "workspaces": ["packages/core"],
   "homepage": "https://midnightlogic.github.io/PieceKeeper/",
   "repository": {
     "type": "git",
