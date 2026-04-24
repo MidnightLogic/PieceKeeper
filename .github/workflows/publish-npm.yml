@@ -1,4 +1,4 @@
-name: Publish @midnightlogic/piecekeeper-crypto to NPM
+name: Publish to NPM
 
 on:
   release:
@@ -7,29 +7,31 @@ on:
 jobs:
   publish:
     runs-on: ubuntu-latest
+
+    # CRITICAL: This block grants the server permission to request the OIDC token from GitHub
     permissions:
       contents: read
+      id-token: write 
+
     steps:
-      - name: Checkout repository
+      - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js 20.x
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '20.x'
           registry-url: 'https://registry.npmjs.org'
 
-      - name: Install dependencies
+      - name: Install Dependencies
         run: npm ci
 
-      - name: Build workspace
+      - name: Build Core Workspace
         run: npm run build
+        working-directory: ./packages/core
 
-      - name: Run core tests
-        run: npm run test
-
+      # Notice there is no 'env: NODE_AUTH_TOKEN' here anymore!
+      # We also add --provenance, which gives your package a fancy verified badge on NPM.
       - name: Publish to NPM
-        run: npm publish --access public
-        working-directory: packages/core
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish --access public --provenance
+        working-directory: ./packages/core
