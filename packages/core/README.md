@@ -209,6 +209,91 @@ const scryptShares = await splitSecret('my-secret', 3, 2, 'password', '', false,
 
 ---
 
+## Stealth Mode (Uniform Share Size)
+
+By default, the engine auto-selects the smallest prime field that fits your secret — a 10-character password produces smaller shares than a 200-byte seed phrase. An attacker who intercepts a share could estimate the secret's length from its size.
+
+**Stealth mode** forces all shares to the maximum 2048-bit prime field with zero-padded payloads, producing **uniform-length shares** regardless of the secret's actual size:
+
+```js
+import { splitSecret, inspectShare } from '@midnightlogic/piecekeeper-crypto';
+
+// Normal mode — share size reflects secret length
+const normal = await splitSecret(
+  'short',         // secret
+  3,               // n (total shares)
+  2,               // k (threshold)
+  '',              // encryptionKey (empty = no encryption)
+  'normal-test'    // comment
+);
+console.log(normal[0].Share.length);  // ~60 characters (128-bit prime)
+
+// Stealth mode — fixed large shares regardless of secret size
+const stealth = await splitSecret(
+  'short',         // secret
+  3,               // n
+  2,               // k
+  '',              // encryptionKey
+  'stealth-test',  // comment
+  true             // isStealth ← forces uniform 2048-bit shares
+);
+console.log(stealth[0].Share.length); // ~470 characters (2048-bit prime)
+
+// Metadata reveals stealth was used:
+console.log(inspectShare(stealth[0].Share).isStealth);  // true
+console.log(inspectShare(stealth[0].Share).primeIndex);  // 4 (max tier)
+```
+
+> **When to use:** High-security scenarios where share size could leak information about the secret (e.g., distinguishing a short PIN from a long seed phrase).
+
+---
+
+## Integrity & Corruption Detection
+
+Each share contains a truncated SHA-256 checksum. If a share is corrupted, modified, or from a different set, reconstruction fails gracefully:
+
+```js
+import { splitSecret, reconstructSecret } from '@midnightlogic/piecekeeper-crypto';
+
+const shares = await splitSecret('my-secret', 3, 2, '', 'test');
+
+// Tamper with a share string
+const corrupted = { ...shares[0], Share: shares[0].Share.slice(0, -10) + 'XXXXXXXXXX' };
+const result = await reconstructSecret([corrupted, shares[1]], '');
+console.log(result.success); // false — checksum mismatch detected
+
+// Mix shares from two different sets
+const otherShares = await splitSecret('other-secret', 3, 2, '', 'other');
+const mixed = await reconstructSecret([shares[0], otherShares[1]], '');
+console.log(mixed.success); // false — family ID mismatch
+console.log(mixed.error);   // "All shares must belong to the same set."
+```
+
+---
+
+## Custom Logging
+
+By default the module logs nothing. Inject a logger to trace cryptographic operations:
+
+```js
+import { setLogger, splitSecret } from '@midnightlogic/piecekeeper-crypto';
+
+// Route engine logs to your application's logger
+setLogger({
+  info:  (...args) => console.log('[PK]', ...args),
+  warn:  (...args) => console.warn('[PK]', ...args),
+  error: (...args) => console.error('[PK]', ...args),
+});
+
+// Now splitSecret() will emit detailed trace logs:
+const shares = await splitSecret('test', 3, 2, '', '');
+// [PK] [Engine] Forging polynomial share 1/3 (x-intercept: 1)
+// [PK] [Engine] Forging polynomial share 2/3 (x-intercept: 2)
+// [PK] [Engine] Forging polynomial share 3/3 (x-intercept: 3)
+```
+
+---
+
 ## API Reference
 
 ### `splitSecret(secret, n, k, encryptionKey?, comment?, isStealth?, schemaVersion?)`
