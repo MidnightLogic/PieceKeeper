@@ -127,7 +127,8 @@ import { logger } from './logger.js';
 
 import { getProgress } from './ui.js';
 import { isNfcSupported, isAndroid } from './utils.js';
-import { decryptBytes, parseShareMetadata, base64ToBytes, bytesToBase64 } from './crypto.js';
+import { parseShareMetadata, base64ToBytes, bytesToBase64 } from '@midnightlogic/piecekeeper-crypto';
+import { decryptBytes } from './cryptoBridge.js';
 // ZXing WASM is loaded lazily on first QR scan — not at boot
 let _readBarcodesFromImageData = null;
 let _zxingReady = false;

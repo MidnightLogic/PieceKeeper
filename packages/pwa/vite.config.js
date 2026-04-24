@@ -3,7 +3,10 @@ import { viteSingleFile } from 'vite-plugin-singlefile';
 import basicSsl from '@vitejs/plugin-basic-ssl';
 import { readFileSync } from 'fs';
 
-const pkg = JSON.parse(readFileSync('./package.json', 'utf8'));
+import { resolve } from 'path';
+
+// Read version from root package.json for __APP_VERSION__ define
+const pkg = JSON.parse(readFileSync(resolve(__dirname, '../../package.json'), 'utf8'));
 
 export default defineConfig(() => {
     // Check if we are running in "tunnel" mode (HTTP)
@@ -37,6 +40,9 @@ export default defineConfig(() => {
         build: {
             outDir: '../dist',
             emptyOutDir: true
+        },
+        optimizeDeps: {
+            exclude: ['@midnightlogic/piecekeeper-crypto', 'hash-wasm']
         }
     };
 });

@@ -17,7 +17,7 @@
  */
 
 import { githubQrDataUrl, scannedRawSharesSet, requiredK, sharePendingKDetermination, sharePendingKDeterminationNfc, reconstructedSecretData, currentGeneratedShares, lastGeneratedN, lastGeneratedK, qrScannerInstance } from './store.js';
-import { createCryptographicShares, executeShamirReconstruction } from './crypto.js';
+import { createCryptographicShares, executeShamirReconstruction } from './cryptoBridge.js';
 import { APP_CONFIG } from './config.js';
 
 

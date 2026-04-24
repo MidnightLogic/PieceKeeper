@@ -8,12 +8,8 @@
 
 import {EXPORT_MODE, RECONSTRUCT_MODE, AppEvents, isSoundEnabled, isTesting, currentReconMode, isScanning, isScanningForInspect, currentScanningPurpose, nfcAbortController, currentNfcPurpose, reconstructionPasswordCallback, lastInspectedShareForPasswordPrompt, firstScannedShareEncryptedStatus, isProcessingSuccessfulReconstruction, currentReconstructionFamilyId, isFamilyMismatchFeedbackCooldown, isGenSharesDelegationAttached, githubQrDataUrl, reconstructionPassword, passwordPromptContext, pendingInspectShareString, scannedRawSharesSet, requiredK, sharePendingKDetermination, sharePendingKDeterminationNfc, sharePendingKDeterminationManual, reconstructedSecretData, currentGeneratedShares, lastGeneratedN, lastGeneratedK, qrScannerInstance, isAutoClearingForm, activeEngineAbortController, resetReconstructionState} from './store.js';
 import { playBeep, triggerHaptic, playSuccessSound, playPasswordPromptSound } from './ui.js';
-import { executeShamirReconstruction } from './crypto.js';
-import { decryptBytes } from './crypto.js';
-
-
-import { parseShareMetadata, base64ToBytes } from './crypto.js';
-import { createCryptographicShares } from './crypto.js';
+import { createCryptographicShares, executeShamirReconstruction, decryptBytes } from './cryptoBridge.js';
+import { parseShareMetadata, base64ToBytes, setLogger as setCoreLogger } from '@midnightlogic/piecekeeper-crypto';
 
 import { safeTranslate } from './utils.js';
 import { buildShareCardHTML, renderGeneratedSharesToUI, resetReconstructionButtonState, displayShareInspectionDetails, validateGenForm, updateNKWarning, prepareAndShowScannerModal, clearReconstructSelection, flashCardError } from './ui.js';
@@ -30,7 +26,8 @@ import { APP_CONFIG } from './config.js';
 import { pieceKeeperTests } from './tests.js';
 import '@khmyznikov/pwa-install';
 
-// Key Derivation Web Worker Dispatcher
+// Inject PWA logger into core module so crypto operations log to UI
+setCoreLogger(logger);
 
 
 i18n.applyTranslations();
@@ -670,6 +667,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const copyBtn = document.getElementById('copy-secret-btn');
         const copyBtnText = document.getElementById('copy-secret-text');
         if (mode === 'reconstruct') {
+            // Reset secret visibility state for fresh modal session
+            secretIsVisible = false;
             if (modalTitle) {
                 modalTitle.textContent = safeTranslate('reconstruct.secret_decrypted', 'Secret Reconstructed');
                 modalTitle.setAttribute('data-i18n', 'reconstruct.secret_decrypted');
@@ -1392,8 +1391,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 // --- Success Path: Update UI ---
                 if (reconPasswordSpan) {
                     reconPasswordSpan.textContent = '••••••••';
+                    reconPasswordSpan.classList.remove('text-emerald-600', 'dark:text-emerald-400');
                     reconPasswordSpan.classList.add('italic', 'text-slate-500', 'dark:text-slate-400', 'cursor-pointer');
                 }
+                secretIsVisible = false;
                 reconNoteSpan.textContent = reconstructedSecretData.get().note || 'None';
                 reconDateSpan.textContent = reconstructedSecretData.get().date || 'Unknown';
                 if (document.getElementById('recon-stats')) {

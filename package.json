@@ -4,7 +4,7 @@
   "description": "Distribute secrets. Eliminate single points of failure.",
   "author": "MidnightLogic",
   "license": "MIT",
-  "workspaces": ["packages/core"],
+  "workspaces": ["packages/core", "packages/pwa"],
   "homepage": "https://midnightlogic.github.io/PieceKeeper/",
   "repository": {
     "type": "git",
@@ -27,43 +27,16 @@
   ],
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build && node src/js/inject_csp_hash.js",
-    "preview": "vite preview",
-    "test": "vitest",
-    "preview:tunnel": "cross-env TUNNEL=true concurrently \"vite preview\" \"lt --port 4173\"",
-    "dev:tunnel": "cross-env TUNNEL=true concurrently \"vite\" \"lt --port 4173\"",
-    "generate-icons": "npx pwa-asset-generator src/public/icon.svg src/public -p \"0%\" -b \"#0f172a\" --index src/index.html --manifest src/public/manifest.json"
+    "dev": "npm run dev --workspace=packages/pwa",
+    "build": "npm run build --workspace=packages/core && npm run build --workspace=packages/pwa",
+    "build:pwa": "npm run build --workspace=packages/pwa",
+    "build:core": "npm run build --workspace=packages/core",
+    "preview": "npm run preview --workspace=packages/pwa",
+    "test": "npm run test --workspace=packages/core",
+    "test:core": "npm run test --workspace=packages/core",
+    "preview:tunnel": "npm run preview:tunnel --workspace=packages/pwa",
+    "dev:tunnel": "npm run dev:tunnel --workspace=packages/pwa"
   },
-  "devDependencies": {
-    "@vite-pwa/assets-generator": "^1.0.2",
-    "@vitejs/plugin-basic-ssl": "^1.1.0",
-    "autoprefixer": "^10.4.18",
-    "concurrently": "^9.2.1",
-    "cross-env": "^10.1.0",
-    "eslint": "^10.2.0",
-    "eslint-plugin-sonarjs": "^4.0.2",
-    "globals": "^17.5.0",
-    "jsdom": "^29.0.1",
-    "localtunnel": "^2.0.2",
-    "postcss": "^8.4.35",
-    "sharp": "^0.34.5",
-    "tailwindcss": "^3.4.1",
-    "vite": "^5.1.4",
-    "vite-plugin-singlefile": "^2.0.1",
-    "vitest": "^4.1.2"
-  },
-  "dependencies": {
-    "@khmyznikov/pwa-install": "^0.6.3",
-    "acorn": "^8.16.0",
-    "esprima": "^4.0.1",
-    "fflate": "^0.8.2",
-    "hash-wasm": "^4.12.0",
-    "js-logger": "^1.6.1",
-    "lucide": "^0.344.0",
-    "nanostores": "^1.2.0",
-    "qr-scanner": "^1.4.2",
-    "qrcode": "^1.5.3",
-    "zxing-wasm": "^3.0.2"
-  }
+  "devDependencies": {},
+  "dependencies": {}
 }
