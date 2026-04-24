@@ -1,6 +1,6 @@
 {
     "name": "@midnightlogic/piecekeeper-pwa",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "private": true,
     "description": "PieceKeeper PWA — Offline-first Shamir Secret Sharing application.",
     "author": "MidnightLogic",
