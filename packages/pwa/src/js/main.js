@@ -2501,23 +2501,10 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Pill click: tap-to-copy (power user shortcut)
+    // Pill click: toggle secret visibility (same as eyeball — catches mis-clicks on the pill background)
     if (secretPill) {
         secretPill.addEventListener('click', () => {
-            if (!reconstructedSecretData.get() || !reconstructedSecretData.get().password) return;
-            navigator.clipboard.writeText(reconstructedSecretData.get().password).then(() => {
-                triggerHaptic('success');
-                reconPasswordSpan.textContent = safeTranslate('reconstruct.copied', 'Copied!');
-                reconPasswordSpan.classList.add('text-emerald-600', 'dark:text-emerald-400');
-                setTimeout(() => {
-                    // Restore based on boolean flag, not stale captured text
-                    reconPasswordSpan.textContent = secretIsVisible
-                        ? reconstructedSecretData.get().password
-                        : '••••••••';
-                    reconPasswordSpan.classList.remove('text-emerald-600', 'dark:text-emerald-400');
-                }, 1500);
-                logger.info('Secret copied via pill tap.');
-            }).catch(() => {});
+            toggleSecretVisibility();
         });
     }
 
