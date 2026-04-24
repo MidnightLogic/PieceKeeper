@@ -24,7 +24,7 @@ export const isAndroid = () => { return /Android/i.test(navigator.userAgent); };
 export const stringToBigInt = (str) => {
     const encoder = new TextEncoder();
     const bytes = encoder.encode(str);
-    // Note: The original limit was checked here, but MAX_PASSWORD_LENGTH was defined elsewhere.
+    // Note: The original limit was checked here, but MAX_SECRET_LENGTH is defined in APP_CONFIG.
     // If we exceed general sizes, catching errors is ideal.
     let hex = Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
     return BigInt('0x' + (hex || '0'));

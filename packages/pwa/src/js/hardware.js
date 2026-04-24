@@ -127,7 +127,7 @@ import { logger } from './logger.js';
 
 import { getProgress } from './ui.js';
 import { isNfcSupported, isAndroid } from './utils.js';
-import { parseShareMetadata, base64ToBytes, bytesToBase64 } from '@midnightlogic/piecekeeper-crypto';
+import { inspectShare, base64ToBytes, bytesToBase64 } from '@midnightlogic/piecekeeper-crypto';
 import { decryptBytes } from './cryptoBridge.js';
 // ZXing WASM is loaded lazily on first QR scan — not at boot
 let _readBarcodesFromImageData = null;
@@ -776,8 +776,8 @@ export const startNfcScannerFlow = async (purpose) => {
                     // Cryptographic K-value Inference Engine for NFC Cards
                     if (requiredK.get() == null) {
                         try {
-                            const meta = parseShareMetadata(shareString);
-                            logger.info(`[NFC] parseShareMetadata result: isValid=${meta?.isValid}, isEncrypted=${meta?.isEncrypted}, payloadLen=${meta?.payload?.length}`);
+                            const meta = inspectShare(shareString);
+                            logger.info(`[NFC] inspectShare result: isValid=${meta?.isValid}, isEncrypted=${meta?.isEncrypted}, payloadLen=${meta?.payload?.length}`);
                             if (meta && meta.isValid) {
                                 if (!meta.isEncrypted && meta.payload && meta.payload.length >= 2) {
                                     // Binary payload: [N_u8, K_u8, X_u8, ...Y_bytes]
@@ -804,7 +804,7 @@ export const startNfcScannerFlow = async (purpose) => {
                         // Validate share is a genuine PieceKeeper share before accepting
                         let nfcShareValid = false;
                         try {
-                            const nfcMeta = parseShareMetadata(shareString);
+                            const nfcMeta = inspectShare(shareString);
                             nfcShareValid = nfcMeta && nfcMeta.isValid;
                         } catch (_) { /* invalid — falls through to rejection */ }
 
@@ -1470,7 +1470,7 @@ export async function handleNfcScanDecodeCycle(event, purpose, stateWrapper, pro
 
         if (requiredK.get() == null) {
             try {
-                const meta = parseShareMetadata(shareString);
+                const meta = inspectShare(shareString);
                 if (meta && meta.isValid) {
                     if (!meta.isEncrypted && meta.payload && meta.payload.length >= 2) {
                         // Binary payload: [N_u8, K_u8, X_u8, ...Y_bytes]
@@ -1550,7 +1550,7 @@ export async function processQrDecodedPayload(decodedText, purpose, resolve, rej
     // --- GATEKEEPER: Reject non-PieceKeeper QR codes ---
     let preflightMeta = { isValid: false };
     try {
-        preflightMeta = parseShareMetadata(decodedText);
+        preflightMeta = inspectShare(decodedText);
     } catch (_) { /* invalid base64 or structure — falls through to rejection */ }
 
     if (!preflightMeta.isValid) {
@@ -1579,7 +1579,7 @@ export async function processQrDecodedPayload(decodedText, purpose, resolve, rej
     } else if (purpose === 'reconstruct' || purpose === 'SCANNER_PURPOSE.RECONSTRUCT') {
         let inspectMeta = { isValid: false };
         logger.info('[QR Process] Attempting to parse JSON/Metadata.');
-        try { inspectMeta = parseShareMetadata(decodedText); } catch (e) { logger.error('[QR Process] Error parsing metadata:', e); }
+        try { inspectMeta = inspectShare(decodedText); } catch (e) { logger.error('[QR Process] Error parsing metadata:', e); }
         const existingPassword = reconstructionPassword.get() || '';
         if (inspectMeta.isValid && inspectMeta.isEncrypted && !existingPassword) {
             // Route through unified password prompt instead of embedded QR password UI

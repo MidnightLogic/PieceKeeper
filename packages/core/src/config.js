@@ -33,11 +33,11 @@
  * @property {bigint} prime - The proven prime strictly greater than 2^(boundary×8).
  */
 
-/** @type {{ APP_VERSION: string, CRYPTO_SCHEMAS: Object<string, CryptoSchema>, SCHEMA_STORAGE_KEY: string, PRIME_TABLE: PrimeEntry[], MAX_PASSWORD_LENGTH: number, MAX_ENCRYPTION_PASSWORD_LENGTH: number, MAX_COMMENT_LENGTH: number, MAX_SHARES_ALLOWED: number }} */
+/** @type {{ DEFAULT_SCHEMA: string, CRYPTO_SCHEMAS: Object<string, CryptoSchema>, PRIME_TABLE: PrimeEntry[], MAX_SECRET_LENGTH: number, MAX_ENCRYPTION_KEY_LENGTH: number, MAX_COMMENT_LENGTH: number, MAX_SHARES: number }} */
 export const APP_CONFIG = {
     // Default KDF schema key — maps to CRYPTO_SCHEMAS below (e.g. "4" = Argon2id 64MB).
-    // This is NOT the app version. Changed via Settings dropdown, persisted in SCHEMA_STORAGE_KEY.
-    APP_VERSION: '4',
+    // Consumers can override per-call via the schemaVersion parameter in splitSecret().
+    DEFAULT_SCHEMA: '4',
 
     // Schema configuration map for robust backward compatibility in future app updates
     CRYPTO_SCHEMAS: {
@@ -108,7 +108,7 @@ export const APP_CONFIG = {
             iv_bytes: 12
         }
     },
-    SCHEMA_STORAGE_KEY: 'cryptoSchemaVersion',
+
 
     // 5-tier Dynamic Prime Resolution Table
     // Each prime is the smallest proven prime strictly greater than 2^(boundary×8)
@@ -121,8 +121,8 @@ export const APP_CONFIG = {
     ],
 
     // Hard System Memory Constraints
-    MAX_PASSWORD_LENGTH: 250,            // 256-byte field limit minus 6-byte overhead (marker + secretLen + 4-byte checksum)
-    MAX_ENCRYPTION_PASSWORD_LENGTH: 256, // Maximum allowable chars for the AES symmetric password
+    MAX_SECRET_LENGTH: 250,              // 256-byte field limit minus 6-byte overhead (marker + secretLen + 4-byte checksum)
+    MAX_ENCRYPTION_KEY_LENGTH: 256,      // Maximum allowable chars for the AES symmetric password
     MAX_COMMENT_LENGTH: 32,              // Maximum string boundary for embedded metadata tokens
-    MAX_SHARES_ALLOWED: 64,              // Hard ceiling on share generation complexity limit
+    MAX_SHARES: 64,                      // Hard ceiling on share generation complexity limit
 };

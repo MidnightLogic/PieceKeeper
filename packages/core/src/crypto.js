@@ -12,7 +12,7 @@
 
 import { argon2id, scrypt } from 'hash-wasm';
 import { getCryptoRandomBigInt, modularInverse, bigIntToBytes, bytesToBigInt } from './math.js';
-import { bytesToBase64, parseShareMetadata } from './binary.js';
+import { bytesToBase64, inspectShare } from './binary.js';
 import { newRandomPolynomial, invokePolynomial } from './shamir.js';
 import { APP_CONFIG } from './config.js';
 
@@ -130,14 +130,14 @@ export const deriveKey = async (passwordStr, salt, schema) => {
  * @param {Uint8Array} dataBytes - The plaintext data to encrypt.
  * @param {string|null} key - The encryption password (null = no encryption).
  * @param {Uint8Array} [aadBytes] - Additional Authenticated Data for AEAD.
- * @param {string} [schemaVersion] - KDF schema version key (defaults to APP_CONFIG.APP_VERSION).
+ * @param {string} [schemaVersion] - KDF schema version key (defaults to APP_CONFIG.DEFAULT_SCHEMA).
  * @returns {Promise<Uint8Array>} The encrypted output: salt || iv || ciphertext.
  */
 export const encryptBytes = async (dataBytes, key, aadBytes = new Uint8Array(0), schemaVersion = null) => {
     if (!key) return dataBytes; // No encryption, return raw bytes
 
     try {
-        const activeVersion = schemaVersion || APP_CONFIG.APP_VERSION;
+        const activeVersion = schemaVersion || APP_CONFIG.DEFAULT_SCHEMA;
         const expectedSchema = APP_CONFIG.CRYPTO_SCHEMAS[activeVersion];
         if (!expectedSchema) throw new Error(`Unknown crypto schema version: ${activeVersion}`);
         const saltBytes = expectedSchema.salt_bytes;
@@ -182,7 +182,7 @@ export const decryptBytes = async (encryptedBytes, key, isEncryptedFlag, schemaV
     if (!key) throw new Error('Encryption password is required to decrypt these shares.');
 
     try {
-        const resolvedVersion = schemaVersion || APP_CONFIG.APP_VERSION;
+        const resolvedVersion = schemaVersion || APP_CONFIG.DEFAULT_SCHEMA;
         const expectedSchema = APP_CONFIG.CRYPTO_SCHEMAS[resolvedVersion];
         if (!expectedSchema) throw new Error(`Unknown crypto schema version: ${resolvedVersion}`);
         const saltLen = expectedSchema.salt_bytes;
@@ -217,42 +217,47 @@ export const decryptBytes = async (encryptedBytes, key, isEncryptedFlag, schemaV
 // --- Share Generation ---
 
 /**
- * Creates N cryptographic shares from a secret using Shamir's Secret Sharing.
+ * Splits a secret into N cryptographic shares using Shamir's Secret Sharing.
  *
- * @param {string} password - The secret text to split.
- * @param {number} n - Total number of shares to generate.
+ * Each share is a self-describing Base64URL envelope containing schema version,
+ * set identifier, timestamp, encryption flags, and threshold parameters.
+ * The secret can only be reconstructed when `k` or more shares are combined.
+ *
+ * @param {string} secret - The secret text to split (max 250 UTF-8 bytes).
+ * @param {number} n - Total number of shares to generate (1–64).
  * @param {number} k - Minimum threshold of shares required for reconstruction.
- * @param {string} [encryptionKey=''] - Optional AES encryption password.
- * @param {string} [comment=''] - Optional metadata comment (max 32 chars).
- * @param {boolean} [isStealth=false] - Whether to use stealth padding.
- * @param {string} [schemaVersion=null] - KDF schema version (defaults to APP_CONFIG.APP_VERSION).
- * @returns {Promise<Array<{ShareIndex: number, Share: string, Comment: string, Timestamp: string, Version: string, IsEncrypted: boolean}>>}
+ * @param {string} [encryptionKey=''] - Optional AES-256-GCM encryption password. Pass empty string for none.
+ * @param {string} [comment=''] - Optional metadata comment embedded in each share (max 32 chars).
+ * @param {boolean} [isStealth=false] - When true, forces 2048-bit prime and uniform-length shares.
+ * @param {string|null} [schemaVersion=null] - KDF schema version key (defaults to APP_CONFIG.DEFAULT_SCHEMA).
+ * @returns {Promise<Array<{ShareIndex: number, Share: string, Comment: string, Timestamp: string, Version: string, IsEncrypted: boolean}>>} Array of generated share objects.
+ * @throws {Error} If k > n, k < 1, secret is empty, or secret exceeds byte limit.
  */
-export async function createCryptographicShares(password, n, k, encryptionKey, comment, isStealth = false, schemaVersion = null) {
+export async function splitSecret(secret, n, k, encryptionKey, comment, isStealth = false, schemaVersion = null) {
     if (k > n) throw new Error('Threshold (k) cannot be greater than total shares (n).');
     if (k < 1 || n < 1) throw new Error('k and n must be at least 1.');
-    if (!password) throw new Error('Password cannot be empty.');
-    if (encryptionKey && encryptionKey.length > APP_CONFIG.MAX_ENCRYPTION_PASSWORD_LENGTH) {
-        throw new Error(`Encryption password exceeds max length (${APP_CONFIG.MAX_ENCRYPTION_PASSWORD_LENGTH} chars).`);
+    if (!secret) throw new Error('Secret cannot be empty.');
+    if (encryptionKey && encryptionKey.length > APP_CONFIG.MAX_ENCRYPTION_KEY_LENGTH) {
+        throw new Error(`Encryption password exceeds max length (${APP_CONFIG.MAX_ENCRYPTION_KEY_LENGTH} chars).`);
     }
 
-    const activeSchemaVersion = schemaVersion || APP_CONFIG.APP_VERSION;
+    const activeSchemaVersion = schemaVersion || APP_CONFIG.DEFAULT_SCHEMA;
 
     const encoder_pw = new TextEncoder();
-    const passwordBytes = encoder_pw.encode(password);
-    const secretLen = passwordBytes.length;
+    const secretBytes = encoder_pw.encode(secret);
+    const secretLen = secretBytes.length;
 
-    // Enforce byte-level bound: marker(1) + secretLen(1) + password + checksum(4) <= 256
-    if (secretLen > APP_CONFIG.MAX_PASSWORD_LENGTH) {
-        throw new Error(`Secret exceeds maximum byte limit (${APP_CONFIG.MAX_PASSWORD_LENGTH} bytes). Use fewer multi-byte characters.`);
+    // Enforce byte-level bound: marker(1) + secretLen(1) + secret + checksum(4) <= 256
+    if (secretLen > APP_CONFIG.MAX_SECRET_LENGTH) {
+        throw new Error(`Secret exceeds maximum byte limit (${APP_CONFIG.MAX_SECRET_LENGTH} bytes). Use fewer multi-byte characters.`);
     }
 
     // --- Integrity Checksum: [0x01 marker][1-byte secretLen][passwordBytes][4-byte SHA-256 truncated] ---
-    const pwDigest = new Uint8Array(await crypto.subtle.digest('SHA-256', passwordBytes));
+    const pwDigest = new Uint8Array(await crypto.subtle.digest('SHA-256', secretBytes));
     const checksumBytes = pwDigest.slice(0, 4);
 
     // Resolve dynamic prime based on actual payload size
-    const rawPayloadLen = 1 + 1 + secretLen + 4; // marker + len + password + checksum
+    const rawPayloadLen = 1 + 1 + secretLen + 4; // marker + len + secret + checksum
     const { index: primeIndex, prime, boundary } = resolvePrime(rawPayloadLen, isStealth);
 
     // Build combined payload — padded to boundary in stealth mode
@@ -260,14 +265,14 @@ export async function createCryptographicShares(password, n, k, encryptionKey, c
     const combinedBytes = new Uint8Array(totalPayloadLen);
     combinedBytes[0] = 0x01;          // Integrity marker
     combinedBytes[1] = secretLen;     // Length prefix
-    combinedBytes.set(passwordBytes, 2);
+    combinedBytes.set(secretBytes, 2);
     combinedBytes.set(checksumBytes, 2 + secretLen);
     // Remaining bytes stay 0x00 (stealth zero-padding)
 
-    const secret = bytesToBigInt(combinedBytes);
+    const secretBigInt = bytesToBigInt(combinedBytes);
 
     // RAM sweep: zero out intermediate buffers
-    passwordBytes.fill(0);
+    secretBytes.fill(0);
     pwDigest.fill(0);
     checksumBytes.fill(0);
     combinedBytes.fill(0);
@@ -276,7 +281,7 @@ export async function createCryptographicShares(password, n, k, encryptionKey, c
     const isEncrypted = !!encryptionKey;
     const familyId = crypto.getRandomValues(new Uint8Array(4)); // 32-bit random Set ID
 
-    const poly = newRandomPolynomial(secret, k - 1, prime);
+    const poly = newRandomPolynomial(secretBigInt, k - 1, prime);
     const shares = [];
     const encoder = new TextEncoder();
     const commentBytes = encoder.encode(comment || '');
@@ -350,11 +355,14 @@ export async function createCryptographicShares(password, n, k, encryptionKey, c
 /**
  * Reconstructs a secret from k or more Shamir shares using Lagrange interpolation.
  *
- * @param {Array<{ShareIndex?: number, Share: string}>} sharesInput - Array of share objects.
- * @param {string|null} [encryptionKey=null] - Decryption password (if shares are encrypted).
- * @returns {Promise<{success: boolean, secret?: string, error?: string, metadata?: Object}>}
+ * Validates share integrity (family ID consistency, duplicate detection, checksum verification)
+ * and decrypts payloads if shares are encrypted with AES-256-GCM.
+ *
+ * @param {Array<{ShareIndex?: number, Share: string}>} sharesInput - Array of share objects containing Base64URL-encoded share strings.
+ * @param {string|null} [encryptionKey=null] - Decryption password for encrypted shares. Pass empty string or null for unencrypted.
+ * @returns {Promise<{success: boolean, secret?: string, error?: string, metadata?: {note: string, date: string, version: string, kdfSchema: string, familyId: string, n: number, k: number}}>} Reconstruction result with secret text and metadata on success.
  */
-export const executeShamirReconstruction = async (sharesInput, encryptionKey = null) => {
+export const reconstructSecret = async (sharesInput, encryptionKey = null) => {
     try {
         if (!sharesInput || sharesInput.length === 0) return { success: false, error: 'No shares provided.' };
 
@@ -367,7 +375,7 @@ export const executeShamirReconstruction = async (sharesInput, encryptionKey = n
 
         for (const inputShare of sharesInput) {
             try {
-                const metadata = parseShareMetadata(inputShare.Share);
+                const metadata = inspectShare(inputShare.Share);
                 if (!metadata.isValid) throw new Error(metadata.error);
                 if (!metadata.familyId) throw new Error('Missing Family ID.');
 

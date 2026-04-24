@@ -8,8 +8,8 @@
 
 import {EXPORT_MODE, RECONSTRUCT_MODE, AppEvents, isSoundEnabled, isTesting, currentReconMode, isScanning, isScanningForInspect, currentScanningPurpose, nfcAbortController, currentNfcPurpose, reconstructionPasswordCallback, lastInspectedShareForPasswordPrompt, firstScannedShareEncryptedStatus, isProcessingSuccessfulReconstruction, currentReconstructionFamilyId, isFamilyMismatchFeedbackCooldown, isGenSharesDelegationAttached, githubQrDataUrl, reconstructionPassword, passwordPromptContext, pendingInspectShareString, scannedRawSharesSet, requiredK, sharePendingKDetermination, sharePendingKDeterminationNfc, sharePendingKDeterminationManual, reconstructedSecretData, currentGeneratedShares, lastGeneratedN, lastGeneratedK, qrScannerInstance, isAutoClearingForm, activeEngineAbortController, resetReconstructionState} from './store.js';
 import { playBeep, triggerHaptic, playSuccessSound, playPasswordPromptSound } from './ui.js';
-import { createCryptographicShares, executeShamirReconstruction, decryptBytes } from './cryptoBridge.js';
-import { parseShareMetadata, base64ToBytes, setLogger as setCoreLogger } from '@midnightlogic/piecekeeper-crypto';
+import { splitSecret, reconstructSecret, decryptBytes } from './cryptoBridge.js';
+import { inspectShare, base64ToBytes, setLogger as setCoreLogger } from '@midnightlogic/piecekeeper-crypto';
 
 import { safeTranslate } from './utils.js';
 import { buildShareCardHTML, renderGeneratedSharesToUI, resetReconstructionButtonState, displayShareInspectionDetails, validateGenForm, updateNKWarning, prepareAndShowScannerModal, clearReconstructSelection, flashCardError } from './ui.js';
@@ -296,11 +296,14 @@ document.addEventListener('DOMContentLoaded', () => {
             return `<option value="${key}" data-i18n="${schema.label_key}">${i18n.t ? i18n.t(schema.label_key) || schema.label_key : schema.label_key}</option>`;
         }).join('');
 
-        cryptoSchemaSelect.value = localStorage.getItem(APP_CONFIG.SCHEMA_STORAGE_KEY) || APP_CONFIG.APP_VERSION;
+        // PWA-local: localStorage key for persisted schema preference (decoupled from core module)
+        const SCHEMA_STORAGE_KEY = 'cryptoSchemaVersion';
+
+        cryptoSchemaSelect.value = localStorage.getItem(SCHEMA_STORAGE_KEY) || APP_CONFIG.DEFAULT_SCHEMA;
 
         // Ensure values are seeded statically on DOM boot if cache is null
-        if (!localStorage.getItem(APP_CONFIG.SCHEMA_STORAGE_KEY)) {
-            localStorage.setItem(APP_CONFIG.SCHEMA_STORAGE_KEY, cryptoSchemaSelect.value);
+        if (!localStorage.getItem(SCHEMA_STORAGE_KEY)) {
+            localStorage.setItem(SCHEMA_STORAGE_KEY, cryptoSchemaSelect.value);
         }
 
         if (!localStorage.getItem('pdf_export_mode')) {
@@ -310,7 +313,7 @@ document.addEventListener('DOMContentLoaded', () => {
         updateCryptoStatsUI();
 
         cryptoSchemaSelect.addEventListener('change', (e) => {
-            localStorage.setItem(APP_CONFIG.SCHEMA_STORAGE_KEY, e.target.value);
+            localStorage.setItem(SCHEMA_STORAGE_KEY, e.target.value);
             updateCryptoStatsUI();
         });
 
@@ -823,7 +826,7 @@ document.addEventListener('DOMContentLoaded', () => {
      * Updates the byte counter for the secret input using TextEncoder.
      * Displays the user-visible byte count against the maximum allowed secret length.
      */
-    const MAX_USER_BYTES = APP_CONFIG.MAX_PASSWORD_LENGTH; // 250
+    const MAX_USER_BYTES = APP_CONFIG.MAX_SECRET_LENGTH; // 250
     const updateByteCount = (inputElement, countElement) => {
         if (!inputElement || !countElement) return;
         const byteLen = new TextEncoder().encode(inputElement.value).length;
@@ -1349,7 +1352,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 // --- Password Gatekeeper for Paste/CSV modes (route through unified Action Sheet) ---
                 if ((modeWhenCalled === RECONSTRUCT_MODE.PASTE || modeWhenCalled === RECONSTRUCT_MODE.CSV) && sharesToProcess.length > 0) {
                     try {
-                        const firstShareMeta = parseShareMetadata(sharesToProcess[0].Share);
+                        const firstShareMeta = inspectShare(sharesToProcess[0].Share);
                         if (firstShareMeta.isValid && firstShareMeta.isEncrypted && !encryptionKey) {
                             playPasswordPromptSound();
                             // Store pending data for the Action Sheet handler
@@ -1373,7 +1376,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 // --- End Password Check ---
 
                 // --- Core Reconstruction ---
-                const result = await executeShamirReconstruction(sharesToProcess, encryptionKey);
+                const result = await reconstructSecret(sharesToProcess, encryptionKey);
                 if (!result.success) {
                     throw new Error(result.error);
                 }
@@ -1977,7 +1980,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Wrap the heavy crypto operation with the unified loading sheet
             const shares = await executeWithLoadingSheet(
-                () => createCryptographicShares(password, n, k, encryptionKey, comment, isStealth),
+                () => splitSecret(password, n, k, encryptionKey, comment, isStealth),
                 safeTranslate('generate.loading_title', 'Forging Cryptographic Shares...'),
                 safeTranslate('generate.loading_subtitle', 'Securing with Two-Factor Encryption...')
             );
@@ -2007,7 +2010,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                         // --- CORRECTED Filename Logic ---
                         // Get n and k from the input fields used during generation
-                        const meta = parseShareMetadata(currentGeneratedShares.get()[0].Share);
+                        const meta = inspectShare(currentGeneratedShares.get()[0].Share);
                         const familyId = meta.isValid ? meta.familyId : 'unknown';
                         const filename = `piecekeeper_shares_(${familyId}).csv`;
                         tempLink.download = filename;
@@ -2068,7 +2071,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         let allSharesText = '';
         currentGeneratedShares.get().forEach((shareObject, index) => {
-            const metadata = parseShareMetadata(shareObject.Share);
+            const metadata = inspectShare(shareObject.Share);
             const familyId = metadata.isValid ? metadata.familyId : 'N/A';
             const comment = shareObject.Comment || 'None';
             // Use the stored timestamp which should be ISO format, then convert to locale for display
@@ -2120,7 +2123,7 @@ document.addEventListener('DOMContentLoaded', () => {
         logger.info(`preparePrintableShareHTML called for ShareIndex: ${shareObject.ShareIndex}. IsEncrypted: ${shareObject.IsEncrypted}`);
         // logger.info('Share Object for Single Printing:', JSON.parse(JSON.stringify(shareObject)));
 
-        const metadata = parseShareMetadata(shareObject.Share);
+        const metadata = inspectShare(shareObject.Share);
         const familyId = metadata.isValid ? metadata.familyId : 'N/A';
         const displayTimestamp = shareObject.Timestamp ?
             (new Date(shareObject.Timestamp).toLocaleString()) :
@@ -2222,7 +2225,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             logger.info('Preparing to print all shares...');
 
-            const firstMeta = parseShareMetadata(currentGeneratedShares.get()[0].Share);
+            const firstMeta = inspectShare(currentGeneratedShares.get()[0].Share);
             const printFamilyId = firstMeta.isValid ? firstMeta.familyId : 'unknown';
             let combinedHtml = `
                     <!DOCTYPE html>
@@ -2294,7 +2297,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const shareObj = currentGeneratedShares.get()[i];
                 logger.info(`Processing share ${shareObj.ShareIndex} for 'Print All'. IsEncrypted: ${shareObj.IsEncrypted}`);
 
-                const meta = parseShareMetadata(shareObj.Share);
+                const meta = inspectShare(shareObj.Share);
                 const ts = meta.isValid ? meta.timestamp : 'Unknown';
                 const fam = meta.isValid ? meta.familyId : 'N/A';
                 const comment = meta.isValid ? meta.comment : 'None';
@@ -2400,7 +2403,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Validate each match is a genuine PieceKeeper share (Schema v2 header check)
             const validShares = regexMatches.filter(share => {
                 try {
-                    const meta = parseShareMetadata(share);
+                    const meta = inspectShare(share);
                     return meta.isValid;
                 } catch (_) { return false; }
             });
@@ -2619,7 +2622,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
             for (const rawShare of scannedRawSharesSet.get()) {
-                const tempMetadata = parseShareMetadata(rawShare);
+                const tempMetadata = inspectShare(rawShare);
                 if (tempMetadata.isEncrypted) {
                     try {
                         if (!tempMetadata.isValid || !tempMetadata.payload) {
@@ -2777,7 +2780,7 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         try {
-            const enginePayload = { generateShares: createCryptographicShares, reconstructSecret: executeShamirReconstruction };
+            const enginePayload = { generateShares: splitSecret, reconstructSecret: reconstructSecret };
             for (const test of pieceKeeperTests) {
                 // Dynamically adopt active schema from local settings!
                 const currentSchemaProfile = document.getElementById('crypto-schema-select')?.value || '1';
@@ -3096,7 +3099,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const shareString = pendingInspectShareString.get();
                 if (!shareString) return;
                 try {
-                    const tempMeta = parseShareMetadata(shareString);
+                    const tempMeta = inspectShare(shareString);
                     if (!tempMeta.isValid || !tempMeta.payload) throw new Error('Malformed share data.');
 
                     // Test decryption — if password is wrong, AES-GCM will throw OperationError
@@ -3123,7 +3126,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     if (shareString) {
                         try {
-                            const meta = parseShareMetadata(shareString);
+                            const meta = inspectShare(shareString);
                             if (meta.isValid) {
                                 const shareDataObj = {
                                     version: meta.version,
@@ -3159,7 +3162,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!pending) return;
 
             try {
-                const tempMeta = parseShareMetadata(pending.shareString);
+                const tempMeta = inspectShare(pending.shareString);
                 if (!tempMeta.isValid || !tempMeta.payload) throw new Error('Malformed share data.');
 
                 const decryptedPayload = await decryptBytes(tempMeta.payload, pw, true, tempMeta.kdfSchema, tempMeta.aadBytes);
@@ -3259,7 +3262,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     // Build and show partial details using displayShareInspectionDetails
                                 // So we need to render partial details manually here
                     try {
-                        const meta = parseShareMetadata(shareString);
+                        const meta = inspectShare(shareString);
                         if (meta.isValid) {
                             const shareDataObj = {
                                 version: meta.version,
@@ -3378,7 +3381,7 @@ export const printSingleShare = async (shareObject) => {
     // Fallback: extract N/K from the share binary metadata
     if (n == null || k == null) {
         try {
-            const meta = parseShareMetadata(shareObject.Share);
+            const meta = inspectShare(shareObject.Share);
             if (meta.isValid && meta.showParsedValues) {
                 n = n ?? meta.totalN;
                 k = k ?? meta.thresholdK;
@@ -3433,7 +3436,7 @@ export const emailSingleShare = async (shareObject) => {
     const tr = safeTranslate;
     logger.info(`Preparing to email share index: ${shareObject.ShareIndex}`);
     try {
-        const metadata = parseShareMetadata(shareObject.Share);
+        const metadata = inspectShare(shareObject.Share);
         const familyId = metadata.isValid ? metadata.familyId : 'N/A';
         const displayTimestamp = shareObject.Timestamp ?
             (new Date(shareObject.Timestamp).toLocaleString()) :

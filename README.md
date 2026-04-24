@@ -1,26 +1,39 @@
 <div align="center">
-  <img src="src/assets/logo-title.svg" width="420" alt="PieceKeeper">
+  <img src="packages/pwa/src/assets/logo-title.svg" width="420" alt="PieceKeeper">
   <p><strong>Distribute secrets. Eliminate single points of failure.</strong></p>
-  <p>An offline-first implementation of <a href="https://en.wikipedia.org/wiki/Shamir%27s_secret_sharing">Shamir's Secret Sharing</a>, compiled into a single HTML file.</p>
+  <p>An offline-first implementation of <a href="https://en.wikipedia.org/wiki/Shamir%27s_secret_sharing">Shamir's Secret Sharing</a>, split across a standalone NPM crypto module and a single-file PWA.</p>
 
-  ![License](https://img.shields.io/badge/license-Apache%20License%202.0-blue)
-  ![Version](https://img.shields.io/badge/version-1.0.1-green)
+  [![NPM Version](https://img.shields.io/npm/v/@midnightlogic/piecekeeper-crypto?color=success)](https://www.npmjs.com/package/@midnightlogic/piecekeeper-crypto)
+  [![GitHub Repository](https://img.shields.io/badge/GitHub-Repository-blue?logo=github)](https://github.com/MidnightLogic/PieceKeeper)
+  [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](https://github.com/MidnightLogic/PieceKeeper/blob/main/LICENSE)
   ![PWA](https://img.shields.io/badge/PWA-installable-blueviolet)
   ![Network](https://img.shields.io/badge/network-zero%20requests-brightgreen)
   ![Languages](https://img.shields.io/badge/languages-21-orange)
-  ![Crypto](https://img.shields.io/badge/crypto-AES--256--GCM%20%2B%20Argon2id-informational)
 </div>
 
 PieceKeeper allows you to take a sensitive secret—like a master password, cryptocurrency seed phrase, or private key—and mathematically split it into multiple independent **shares**. You define a threshold (e.g., "any 3 out of 5 shares"), and the secret can only be reconstructed when that minimum number of shares are brought together. Any fewer reveals nothing.
 
 Shares can be distributed as printable **QR codes**, written to **NFC tags**, or saved as plain **text**. An optional two-factor password adds a second layer of protection so that physical possession of shares alone is not sufficient to decode the secret.
 
-The entire application compiles into a **single, self-contained HTML file** with no external dependencies and zero network requests.
+---
 
-<div align="center">
-  <img src="src/assets/demo.gif" alt="PieceKeeper Demo">
-  <p><em>Generate shares, scan QR codes & NFC tags, and reconstruct secrets — all offline.</em></p>
-</div>
+## 📦 Monorepo Architecture
+
+This repository is structured as an NPM workspace containing two packages:
+
+```
+PieceKeeper/
+├── packages/
+│   ├── core/   →  @midnightlogic/piecekeeper-crypto  (standalone NPM module)
+│   └── pwa/    →  PieceKeeper PWA  (Vite single-file application)
+├── package.json  (workspace root)
+└── LICENSE
+```
+
+| Package | Description |
+|---|---|
+| [`packages/core`](packages/core/) | Isomorphic Shamir's Secret Sharing + AES-256-GCM encryption. Zero DOM dependencies. Ships ESM, CJS, and TypeScript declarations. |
+| [`packages/pwa`](packages/pwa/) | The full PieceKeeper Progressive Web App — camera scanning, NFC, QR code generation, 21 languages, and offline-first architecture. |
 
 ---
 
@@ -69,6 +82,46 @@ A pre-compiled deployment is available via GitHub Pages:
 
 ---
 
+## 📦 `@midnightlogic/piecekeeper-crypto`
+
+The cryptographic core is published as a standalone NPM package for use in your own applications:
+
+```bash
+npm install @midnightlogic/piecekeeper-crypto
+```
+
+### Split a Secret
+
+```js
+import { splitSecret } from '@midnightlogic/piecekeeper-crypto';
+
+const shares = await splitSecret('my-secret-password', 5, 3, '', 'backup-key');
+// → 5 shares, any 3 can reconstruct
+```
+
+### Reconstruct a Secret
+
+```js
+import { reconstructSecret } from '@midnightlogic/piecekeeper-crypto';
+
+const result = await reconstructSecret(shares.slice(0, 3), '');
+console.log(result.secret); // "my-secret-password"
+```
+
+### Inspect a Share
+
+```js
+import { inspectShare } from '@midnightlogic/piecekeeper-crypto';
+
+const meta = inspectShare(shares[0].Share);
+console.log(meta.isEncrypted); // false
+console.log(meta.familyId);    // "a1b2c3d4"
+```
+
+> **Full API documentation →** [`packages/core/README.md`](packages/core/README.md)
+
+---
+
 ## 🔐 Cryptography
 
 *   **Shamir's Secret Sharing (SSS):** Generates polynomial shares over a 5-tier prime Galois Field (128-bit to 2048-bit), providing information-theoretic security below the threshold.
@@ -82,8 +135,6 @@ A pre-compiled deployment is available via GitHub Pages:
 *   **Tamper-Evident Shares:** Each share is a self-describing Base64 envelope containing schema version, set identifier, timestamp, and N/K parameters.
 *   **Content Security Policy:** Production builds inject SHA-256 script hashes into CSP headers, blocking arbitrary code execution without relying on `unsafe-eval`. Frame-ancestors, form-action, and base-uri are locked down.
 *   **XSS Protection:** All user-supplied data (comments, share strings, metadata) is escaped via `escapeHtml()` before any HTML rendering.
-
-### Cryptographic Architecture (Deep Dive)
 
 <details>
 <summary><strong>Click to expand: Share Binary Format, Prime Fields, Polynomial Arithmetic, and Integrity Checksums</strong></summary>
@@ -205,9 +256,9 @@ After every cryptographic operation, all intermediate byte arrays (`passwordByte
 
 ---
 
-## 🛠️ Build from Source
+## 🛠️ Local Development
 
-PieceKeeper uses Vite with a single-file build plugin to compile everything into one HTML file.
+PieceKeeper uses NPM workspaces. All commands are run from the repository root.
 
 ### 1. Clone & Install
 ```bash
@@ -217,15 +268,20 @@ npm install
 ```
 
 ### 2. Development Server
+Builds the core module, then starts the PWA dev server with hot reload:
 ```bash
 npm run dev
 ```
 
 ### 3. Production Build
-Compiles all modules, stylesheets, and assets into `dist/index.html`:
+Builds both packages (Core → PWA) and compiles everything into `packages/pwa/dist/index.html`:
 ```bash
-npm run generate-icons
 npm run build
+```
+
+### 4. Run Core Tests
+```bash
+npm run test
 ```
 
 ---
@@ -241,9 +297,15 @@ npm run preview:tunnel
 
 This starts a local server and creates a temporary HTTPS tunnel, allowing you to test on mobile devices over your local network.
 
-Note: Because the application is configured for GitHub Pages routing, you must append /PieceKeeper/ to the end of the temporary tunnel URL provided in your terminal (e.g., https://[your-tunnel-url]/PieceKeeper/).
+Note: Because the application is configured for GitHub Pages routing, you must append /PieceKeeper/ to the end of the temporary tunnel URL provided in your terminal (e.g., `https://[your-tunnel-url]/PieceKeeper/`).
 
+---
 
+## 🔐 Security
+
+See [SECURITY.md](SECURITY.md) for our vulnerability disclosure policy.
+
+---
 
 ## 📜 License
 

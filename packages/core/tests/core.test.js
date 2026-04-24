@@ -7,9 +7,9 @@
 
 import { describe, it, expect } from 'vitest';
 import {
-    createCryptographicShares,
-    executeShamirReconstruction,
-    parseShareMetadata,
+    splitSecret,
+    reconstructSecret,
+    inspectShare,
     bytesToBase64,
     base64ToBytes,
     deriveKey,
@@ -80,17 +80,17 @@ describe('Binary Utilities', () => {
 
 // ── Share Parsing ───────────────────────────────────────────────────────
 
-describe('parseShareMetadata', () => {
+describe('inspectShare', () => {
     it('returns isValid: false for data shorter than 14 bytes', () => {
         const shortData = bytesToBase64(new Uint8Array(10));
-        const result = parseShareMetadata(shortData);
+        const result = inspectShare(shortData);
         expect(result.isValid).toBe(false);
     });
 
     it('returns isValid: false for wrong schema major version', () => {
         const badHeader = new Uint8Array(20);
         badHeader[0] = 99; // Wrong major version
-        const result = parseShareMetadata(bytesToBase64(badHeader));
+        const result = inspectShare(bytesToBase64(badHeader));
         expect(result.isValid).toBe(false);
         expect(result.error).toContain('Unsupported share format');
     });
@@ -100,59 +100,59 @@ describe('parseShareMetadata', () => {
 
 describe('Shamir Secret Sharing — Unencrypted', () => {
     it('Basic 3-of-5: generates 5 shares and reconstructs with any 3', async () => {
-        const shares = await createCryptographicShares('MySimplePassword123', 5, 3, '', 'Test Comment 1');
+        const shares = await splitSecret('MySimplePassword123', 5, 3, '', 'Test Comment 1');
         expect(shares).toHaveLength(5);
 
         // Reconstruct with first 3 shares
-        const recon1 = await executeShamirReconstruction(shares.slice(0, 3), '');
+        const recon1 = await reconstructSecret(shares.slice(0, 3), '');
         expect(recon1.success).toBe(true);
         expect(recon1.secret).toBe('MySimplePassword123');
         expect(recon1.metadata.note).toBe('Test Comment 1');
 
         // Reconstruct with non-adjacent shares [1, 3, 5]
-        const recon2 = await executeShamirReconstruction([shares[0], shares[2], shares[4]], '');
+        const recon2 = await reconstructSecret([shares[0], shares[2], shares[4]], '');
         expect(recon2.success).toBe(true);
         expect(recon2.secret).toBe('MySimplePassword123');
     });
 
     it('Fails with insufficient shares (2 of 3 needed)', async () => {
-        const shares = await createCryptographicShares('MySimplePassword123', 5, 3, '', 'Test');
-        const recon = await executeShamirReconstruction(shares.slice(0, 2), '');
+        const shares = await splitSecret('MySimplePassword123', 5, 3, '', 'Test');
+        const recon = await reconstructSecret(shares.slice(0, 2), '');
         expect(recon.success).toBe(false);
     });
 
     it('Edge case: k=1 (single share reconstruction)', async () => {
-        const shares = await createCryptographicShares('k_is_one', 2, 1, '', 'k=1 test');
-        const r = await executeShamirReconstruction([shares[1]], '');
+        const shares = await splitSecret('k_is_one', 2, 1, '', 'k=1 test');
+        const r = await reconstructSecret([shares[1]], '');
         expect(r.success).toBe(true);
         expect(r.secret).toBe('k_is_one');
     });
 
     it('UTF-8 special characters survive round-trip', async () => {
         const secret = '🔑 αβγ ✅ € ™ 你好 π≈3.14';
-        const shares = await createCryptographicShares(secret, 4, 2, '', 'UTF8');
-        const r = await executeShamirReconstruction(shares.slice(0, 2), '');
+        const shares = await splitSecret(secret, 4, 2, '', 'UTF8');
+        const r = await reconstructSecret(shares.slice(0, 2), '');
         expect(r.success).toBe(true);
         expect(r.secret).toBe(secret);
     });
 
     it('Duplicate shares are de-duplicated (not enough unique shares)', async () => {
-        const shares = await createCryptographicShares('DuplicateTest', 3, 3, '', 'Dup Test');
-        const r = await executeShamirReconstruction([shares[0], shares[0], shares[1]], '');
+        const shares = await splitSecret('DuplicateTest', 3, 3, '', 'Dup Test');
+        const r = await reconstructSecret([shares[0], shares[0], shares[1]], '');
         expect(r.success).toBe(false);
     });
 
     it('Mismatched family IDs are rejected', async () => {
-        const sharesA = await createCryptographicShares('SecretA', 3, 2, '', 'Set A');
-        const sharesB = await createCryptographicShares('SecretB', 3, 2, '', 'Set B');
-        const r = await executeShamirReconstruction([sharesA[0], sharesB[1]], '');
+        const sharesA = await splitSecret('SecretA', 3, 2, '', 'Set A');
+        const sharesB = await splitSecret('SecretB', 3, 2, '', 'Set B');
+        const r = await reconstructSecret([sharesA[0], sharesB[1]], '');
         expect(r.success).toBe(false);
     });
 
     it('Corrupted share data is detected', async () => {
-        const shares = await createCryptographicShares('CorruptTest', 3, 2, '', 'Corrupt');
+        const shares = await splitSecret('CorruptTest', 3, 2, '', 'Corrupt');
         const corruptedStr = shares[0].Share.substring(0, shares[0].Share.length - 10) + '!!!!!!!!';
-        const r = await executeShamirReconstruction([{ ShareIndex: 1, Share: corruptedStr }, shares[1]], '');
+        const r = await reconstructSecret([{ ShareIndex: 1, Share: corruptedStr }, shares[1]], '');
         expect(r.success).toBe(false);
     });
 });
@@ -162,18 +162,18 @@ describe('Shamir Secret Sharing — Unencrypted', () => {
 describe('Shamir Secret Sharing — Encrypted (PBKDF2)', () => {
     it('Encrypted 2-of-3: fails without password, succeeds with correct password', async () => {
         // Use schema '2' (fast PBKDF2) to keep tests quick
-        const shares = await createCryptographicShares('Another!@#Secret', 3, 2, 'myEncKey123', 'Encrypted Test', false, '2');
+        const shares = await splitSecret('Another!@#Secret', 3, 2, 'myEncKey123', 'Encrypted Test', false, '2');
 
         // Fails without password
-        const r1 = await executeShamirReconstruction(shares.slice(0, 2), '');
+        const r1 = await reconstructSecret(shares.slice(0, 2), '');
         expect(r1.success).toBe(false);
 
         // Fails with wrong password
-        const r2 = await executeShamirReconstruction(shares.slice(0, 2), 'wrongKey');
+        const r2 = await reconstructSecret(shares.slice(0, 2), 'wrongKey');
         expect(r2.success).toBe(false);
 
         // Succeeds with correct password
-        const r3 = await executeShamirReconstruction(shares.slice(0, 2), 'myEncKey123');
+        const r3 = await reconstructSecret(shares.slice(0, 2), 'myEncKey123');
         expect(r3.success).toBe(true);
         expect(r3.secret).toBe('Another!@#Secret');
     });

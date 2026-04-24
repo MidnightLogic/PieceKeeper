@@ -13,7 +13,7 @@ import { printSingleShare, emailSingleShare } from './main.js';
 import { startNfcMintingFlow, requestNfcPermission, showPasswordPrompt } from './hardware.js';
 import { showQRCode } from './main.js';
 import { i18n } from './i18n.js';
-import { parseShareMetadata } from '@midnightlogic/piecekeeper-crypto';
+import { inspectShare } from '@midnightlogic/piecekeeper-crypto';
 import { decryptBytes } from './cryptoBridge.js';
 import { copyToClipboard, escapeHtml, flashButton } from './utils.js';
 import { safeTranslate } from './utils.js';
@@ -127,7 +127,7 @@ export const renderGeneratedSharesToUI = (shares, k) => {
             let displayTimestamp = 'Unknown';
             let displayEncrypted = false;
             try {
-                const meta = parseShareMetadata(s.Share);
+                const meta = inspectShare(s.Share);
                 if (meta.isValid) {
                     displayFamilyId = meta.familyId;
                     displayComment = meta.comment || 'None';
@@ -326,7 +326,7 @@ export async function displayShareInspectionDetails(shareBase64) {
         }
 
         try {
-            const metadata = parseShareMetadata(shareBase64);
+            const metadata = inspectShare(shareBase64);
             
             
             
@@ -364,7 +364,7 @@ export async function displayShareInspectionDetails(shareBase64) {
                     shareDataObj.thresholdK = 'N/A';
                     shareDataObj.shareIndex = 'N/A';
                     try {
-                        // metadata already parsed upstream — reuse it (DRY, no redundant parseShareMetadata call)
+                        // metadata already parsed upstream — reuse it (DRY, no redundant inspectShare call)
                         if (metadata.payload && metadata.payload.length > 0) {
                             const decryptedPayload = await decryptBytes(metadata.payload, currentPassword, metadata.isEncrypted, metadata.kdfSchema, metadata.aadBytes);
                             // Binary-packed inner payload: [N:1 byte][K:1 byte][X:1 byte][Y:variable bytes]
@@ -471,13 +471,13 @@ export const validateGenForm = () => {
         if (!pass) {
             secretPassOk = false;
             tooltipMessages.push("Secret text is required.");
-        } else if (pass.length > APP_CONFIG.MAX_PASSWORD_LENGTH) { // Assuming APP_CONFIG.MAX_PASSWORD_LENGTH is defined
+        } else if (pass.length > APP_CONFIG.MAX_SECRET_LENGTH) { // Assuming APP_CONFIG.MAX_SECRET_LENGTH is defined
             secretPassOk = false;
             if (genConfirmPasswordError) { // Assuming you might want to show this near password field
-                genConfirmPasswordError.textContent = `Secret exceeds ${APP_CONFIG.MAX_PASSWORD_LENGTH} chars.`;
+                genConfirmPasswordError.textContent = `Secret exceeds ${APP_CONFIG.MAX_SECRET_LENGTH} chars.`;
                 genConfirmPasswordError.classList.remove('hidden');
             }
-            tooltipMessages.push(`Secret too long (max ${APP_CONFIG.MAX_PASSWORD_LENGTH}).`);
+            tooltipMessages.push(`Secret too long (max ${APP_CONFIG.MAX_SECRET_LENGTH}).`);
         } else if (pass !== conf) {
             secretPassOk = false;
             if (conf.length > 0) {
@@ -495,16 +495,16 @@ export const validateGenForm = () => {
 
 
         // N and K Validation
-        const nOk = !isNaN(nVal) && nVal >= 1 && nVal <= APP_CONFIG.MAX_SHARES_ALLOWED;
-        const kOk = !isNaN(kVal) && kVal >= 1 && kVal <= APP_CONFIG.MAX_SHARES_ALLOWED;
+        const nOk = !isNaN(nVal) && nVal >= 1 && nVal <= APP_CONFIG.MAX_SHARES;
+        const kOk = !isNaN(kVal) && kVal >= 1 && kVal <= APP_CONFIG.MAX_SHARES;
         const kLessN = nOk && kOk && kVal <= nVal; // k <= n check
 
         if (!nOk && genNInput.value.trim() !== '') { // Show error if N has a value but it's invalid
             if (genNError) {
-                genNError.textContent = i18n.t('generate.n_error_range') || `Total Shares (N) must be a number between 1 and ${APP_CONFIG.MAX_SHARES_ALLOWED}.`;
+                genNError.textContent = i18n.t('generate.n_error_range') || `Total Shares (N) must be a number between 1 and ${APP_CONFIG.MAX_SHARES}.`;
                 genNError.classList.remove('hidden');
             }
-            tooltipMessages.push(`N must be 1-${APP_CONFIG.MAX_SHARES_ALLOWED}.`);
+            tooltipMessages.push(`N must be 1-${APP_CONFIG.MAX_SHARES}.`);
         }
         if (!nOk && genNInput.value.trim() === '') { // N is required, add to tooltip if empty
             tooltipMessages.push("Total Shares (N) is required.");
@@ -513,10 +513,10 @@ export const validateGenForm = () => {
 
         if (!kOk && genKInput.value.trim() !== '') { // Show error if K has a value but it's invalid (range)
             if (genKError) {
-                genKError.textContent = i18n.t('generate.k_error_range') || `Min. Shares (K) must be a number between 1 and ${APP_CONFIG.MAX_SHARES_ALLOWED}.`;
+                genKError.textContent = i18n.t('generate.k_error_range') || `Min. Shares (K) must be a number between 1 and ${APP_CONFIG.MAX_SHARES}.`;
                 genKError.classList.remove('hidden');
             }
-            tooltipMessages.push(`K must be 1-${APP_CONFIG.MAX_SHARES_ALLOWED}.`);
+            tooltipMessages.push(`K must be 1-${APP_CONFIG.MAX_SHARES}.`);
         }
         if (!kOk && genKInput.value.trim() === '') { // K is required
             tooltipMessages.push("Min. Shares (K) is required.");
@@ -534,10 +534,10 @@ export const validateGenForm = () => {
         // Encryption Password Validation
         let encryptKeyOk = true;
         if (encryptKey) { // An encryption password is being attempted
-            if (encryptKey.length > APP_CONFIG.MAX_ENCRYPTION_PASSWORD_LENGTH) {
+            if (encryptKey.length > APP_CONFIG.MAX_ENCRYPTION_KEY_LENGTH) {
                 encryptKeyOk = false;
                 if (genConfirmEncryptKeyError) { // Re-using confirm field for this error for now
-                    genConfirmEncryptKeyError.textContent = `Encryption password exceeds ${APP_CONFIG.MAX_ENCRYPTION_PASSWORD_LENGTH} chars.`;
+                    genConfirmEncryptKeyError.textContent = `Encryption password exceeds ${APP_CONFIG.MAX_ENCRYPTION_KEY_LENGTH} chars.`;
                     genConfirmEncryptKeyError.classList.remove('hidden');
                 }
                 tooltipMessages.push("Encryption password too long.");

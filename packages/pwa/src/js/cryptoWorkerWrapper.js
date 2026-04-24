@@ -7,8 +7,8 @@
  */
 
 import {
-    createCryptographicShares,
-    executeShamirReconstruction,
+    splitSecret,
+    reconstructSecret,
     decryptBytes,
     deriveKey,
 } from '@midnightlogic/piecekeeper-crypto';
@@ -18,11 +18,11 @@ self.onmessage = async (event) => {
     try {
         let result;
         switch (fn) {
-            case 'createCryptographicShares':
-                result = await createCryptographicShares(...args);
+            case 'splitSecret':
+                result = await splitSecret(...args);
                 break;
-            case 'executeShamirReconstruction':
-                result = await executeShamirReconstruction(...args);
+            case 'reconstructSecret':
+                result = await reconstructSecret(...args);
                 break;
             case 'decryptBytes':
                 result = await decryptBytes(...args);

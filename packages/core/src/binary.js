@@ -63,13 +63,17 @@ export const base64ToBytes = (base64) => {
  */
 
 /**
- * Parses binary share metadata from a Base64URL-encoded share string.
+ * Inspects a Base64URL-encoded share string and extracts its metadata without decryption.
+ *
  * Validates the binary header structure, magic bytes, prime index, and KDF schema.
+ * The returned metadata enables UI display of share properties (encryption status,
+ * timestamp, set ID) without requiring the decryption password.
  *
  * @param {string} shareBase64 - Base64URL-encoded share string.
- * @returns {ShareMetadata} Parsed metadata object.
+ * @returns {ShareMetadata} Parsed metadata object. Check `isValid` before accessing other fields.
+ * @throws {Error} If the input is not valid Base64 encoding.
  */
-export const parseShareMetadata = (shareBase64) => {
+export const inspectShare = (shareBase64) => {
     let bytes;
     try {
         bytes = base64ToBytes(shareBase64);

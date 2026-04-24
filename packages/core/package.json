@@ -3,7 +3,7 @@
     "version": "1.0.0",
     "description": "Isomorphic Shamir's Secret Sharing + AES-256-GCM encryption. Split secrets, reconstruct with threshold — works in Node.js and browsers.",
     "author": "MidnightLogic",
-    "license": "MIT",
+    "license": "Apache-2.0",
     "type": "module",
     "main": "./dist/index.cjs",
     "module": "./dist/index.js",
@@ -22,7 +22,9 @@
     },
     "files": [
         "dist",
-        "README.md"
+        "README.md",
+        "LICENSE",
+        "CHANGELOG.md"
     ],
     "repository": {
         "type": "git",
@@ -39,9 +41,11 @@
         "cryptography",
         "aes-256-gcm",
         "argon2id",
+        "scrypt",
         "threshold",
         "isomorphic",
-        "encryption"
+        "encryption",
+        "pwa"
     ],
     "engines": {
         "node": ">=18.0.0"

@@ -41,15 +41,15 @@ const callWorker = (fn, ...args) => {
 
 /**
  * Creates N cryptographic shares from a secret (worker-offloaded).
- * @see {@link @midnightlogic/piecekeeper-crypto#createCryptographicShares}
+ * @see {@link @midnightlogic/piecekeeper-crypto#splitSecret}
  */
-export const createCryptographicShares = (...args) => callWorker('createCryptographicShares', ...args);
+export const splitSecret = (...args) => callWorker('splitSecret', ...args);
 
 /**
  * Reconstructs a secret from k or more shares (worker-offloaded).
- * @see {@link @midnightlogic/piecekeeper-crypto#executeShamirReconstruction}
+ * @see {@link @midnightlogic/piecekeeper-crypto#reconstructSecret}
  */
-export const executeShamirReconstruction = (...args) => callWorker('executeShamirReconstruction', ...args);
+export const reconstructSecret = (...args) => callWorker('reconstructSecret', ...args);
 
 /**
  * Decrypts share payload bytes (worker-offloaded).
