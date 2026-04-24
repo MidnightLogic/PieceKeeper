@@ -5,7 +5,7 @@ All notable changes to `@midnightlogic/piecekeeper-crypto` will be documented in
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.0.0] - 2026-04-24
+## [1.0.1] - 2026-04-24
 
 ### Added
 
@@ -44,4 +44,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `SCHEMA_STORAGE_KEY` — moved to the PWA layer (localStorage is a UI concern, not a crypto module concern).
 
-[1.0.0]: https://github.com/MidnightLogic/PieceKeeper/releases/tag/core-v1.0.0
+[1.0.1]: https://github.com/MidnightLogic/PieceKeeper/releases/tag/core-v1.0.1

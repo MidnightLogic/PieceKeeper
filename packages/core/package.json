@@ -1,6 +1,6 @@
 {
     "name": "@midnightlogic/piecekeeper-crypto",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "description": "Isomorphic Shamir's Secret Sharing + AES-256-GCM encryption. Split secrets, reconstruct with threshold — works in Node.js and browsers.",
     "author": "MidnightLogic",
     "license": "Apache-2.0",
