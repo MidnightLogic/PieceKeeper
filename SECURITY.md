@@ -15,7 +15,7 @@ Only the latest major version receives security patches. If you are using an old
 
 If you discover a security issue in PieceKeeper or the `@midnightlogic/piecekeeper-crypto` package, please report it privately:
 
-1. **Email:** Send a detailed report to **security@midnightlogic.dev**
+1. **Email:** Send a detailed report to **midnightlogicsoftware@protonmail.com**
 2. **Include:**
    - A clear description of the vulnerability
    - Steps to reproduce the issue
