@@ -9,7 +9,7 @@
 import {EXPORT_MODE, RECONSTRUCT_MODE, AppEvents, isSoundEnabled, isTesting, currentReconMode, isScanning, isScanningForInspect, currentScanningPurpose, nfcAbortController, currentNfcPurpose, reconstructionPasswordCallback, lastInspectedShareForPasswordPrompt, firstScannedShareEncryptedStatus, isProcessingSuccessfulReconstruction, currentReconstructionFamilyId, isFamilyMismatchFeedbackCooldown, isGenSharesDelegationAttached, githubQrDataUrl, reconstructionPassword, passwordPromptContext, pendingInspectShareString, scannedRawSharesSet, requiredK, sharePendingKDetermination, sharePendingKDeterminationNfc, sharePendingKDeterminationManual, reconstructedSecretData, currentGeneratedShares, lastGeneratedN, lastGeneratedK, qrScannerInstance, isAutoClearingForm, activeEngineAbortController, resetReconstructionState} from './store.js';
 import { playBeep, triggerHaptic, playSuccessSound, playPasswordPromptSound } from './ui.js';
 import { splitSecret, reconstructSecret, decryptBytes } from './cryptoBridge.js';
-import { inspectShare, base64ToBytes, setLogger as setCoreLogger } from '@midnightlogic/piecekeeper-crypto';
+import { inspectShare, base64ToBytes, setLogger as setCoreLogger, PasswordRequiredError, InsufficientSharesError, IntegrityCheckError, WrongPasswordError, SetMismatchError, PieceKeeperError } from '@midnightlogic/piecekeeper-crypto';
 
 import { safeTranslate } from './utils.js';
 import { buildShareCardHTML, renderGeneratedSharesToUI, resetReconstructionButtonState, displayShareInspectionDetails, validateGenForm, updateNKWarning, prepareAndShowScannerModal, clearReconstructSelection, flashCardError } from './ui.js';
@@ -1332,7 +1332,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                         throw new Error(`Not enough shares scanned. Need ${requiredK.get() || 'K (unknown)'}, got ${scannedRawSharesSet.get().size}.`);
                     }
-                    sharesToProcess = Array.from(scannedRawSharesSet.get()).map(s => ({ Share: s, ShareIndex: 0 })); // Index isn't critical here
+                    sharesToProcess = Array.from(scannedRawSharesSet.get()).map(s => ({ share: s, shareIndex: 0 })); // Index isn't critical here
                 } else {
                     // 3a. Reset flag on early exit
                     isProcessingSuccessfulReconstruction.set(false);
@@ -1352,12 +1352,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 // --- Password Gatekeeper for Paste/CSV modes (route through unified Action Sheet) ---
                 if ((modeWhenCalled === RECONSTRUCT_MODE.PASTE || modeWhenCalled === RECONSTRUCT_MODE.CSV) && sharesToProcess.length > 0) {
                     try {
-                        const firstShareMeta = inspectShare(sharesToProcess[0].Share);
+                        const firstShareMeta = inspectShare(sharesToProcess[0].share);
                         if (firstShareMeta.isValid && firstShareMeta.isEncrypted && !encryptionKey) {
                             playPasswordPromptSound();
                             // Store pending data for the Action Sheet handler
                             sharePendingKDeterminationManual.set(Object.assign({}, firstShareMeta, {
-                                shareString: sharesToProcess[0].Share,
+                                shareString: sharesToProcess[0].share,
                                 version: firstShareMeta.version
                             }));
                             passwordPromptContext.set('reconstruct');
@@ -1377,13 +1377,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 // --- Core Reconstruction ---
                 const result = await reconstructSecret(sharesToProcess, encryptionKey);
-                if (!result.success) {
-                    throw new Error(result.error);
-                }
                 reconstructedSecretData.set({
                     password: result.secret,
-                    note: result.metadata.note,
-                    date: result.metadata.date,
+                    note: result.metadata.comment,
+                    date: result.metadata.timestamp,
                     version: result.metadata.version,
                     kdfSchema: result.metadata.kdfSchema,
                     familyId: result.metadata.familyId,
@@ -1450,10 +1447,33 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Flag `isProcessingSuccessfulReconstruction.get()` remains true until the finally block's timeout.
 
             } catch (e) {
-                // --- Error Path ---
+                // --- Error Path (Typed Error Handling) ---
+
+                if (e instanceof PasswordRequiredError) {
+                    // Encrypted shares detected — show password prompt instead of error
+                    logger.info('[attemptReconstruction] PasswordRequiredError caught — prompting for password.');
+                    playPasswordPromptSound();
+                    passwordPromptContext.set('reconstruct');
+                    isProcessingSuccessfulReconstruction.set(false);
+                    showPasswordPrompt();
+                    return 'paused';
+                }
+
+                // All other errors: display inline
+                let userMessage = e.message;
+                if (e instanceof InsufficientSharesError) {
+                    userMessage = safeTranslate('error.insufficient_shares', `Need ${e.required} shares, only ${e.provided} provided.`);
+                } else if (e instanceof WrongPasswordError) {
+                    userMessage = safeTranslate('error.wrong_password', 'Decryption failed. The encryption password is incorrect.');
+                } else if (e instanceof IntegrityCheckError) {
+                    userMessage = safeTranslate('error.integrity_failed', 'Integrity check failed. Shares are corrupted or tampered with.');
+                } else if (e instanceof SetMismatchError) {
+                    userMessage = safeTranslate('error.set_mismatch', 'All shares must belong to the same set.');
+                }
+
                 logger.error(`Reconstruction failed: ${e.message}`);
                 if (reconErrorDiv) {
-                    reconErrorDiv.textContent = `Error: ${e.message}`;
+                    reconErrorDiv.textContent = `Error: ${userMessage}`;
                     reconErrorDiv.classList.remove('hidden');
                 }
 
@@ -1501,7 +1521,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     /**
      * Creates a Blob URL for downloading shares as a CSV file.
-     * @param {Array<{ShareIndex: number, Share: string, Comment: string, Timestamp: string}>} shares - Array of share objects.
+     * @param {Array<{shareIndex: number, share: string, comment: string, timestamp: string}>} shares - Array of share objects.
      * @returns {string} Object URL for the CSV blob.
      */
     const saveSharesToCsv = (shares) => {
@@ -1510,7 +1530,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Map shares to CSV rows, quoting fields to handle potential commas/newlines (basic quoting)
         const csvRows = shares.map(s =>
             // Simple quoting: replace internal quotes with double quotes, wrap in quotes
-            `${s.ShareIndex},"${s.Share.replace(/"/g, '""')}","${(s.Comment || '').replace(/"/g, '""')}","${s.Timestamp || ''}"`
+            `${s.shareIndex},"${s.share.replace(/"/g, '""')}","${(s.comment || '').replace(/"/g, '""')}","${s.timestamp || ''}"`
         ).join('\n');
         const csvContent = csvHeader + csvRows;
         // Create a Blob object
@@ -1523,7 +1543,7 @@ document.addEventListener('DOMContentLoaded', () => {
      * MODIFIED: Loads and parses shares from an uploaded CSV file.
      * Focuses on finding the 'Share' column. Other columns are optional.
      * @param {File} file - The CSV file object from the input element.
-     * @returns {Promise<Array<{Share: string, ShareIndex: number | null}>>} Array of parsed share objects.
+     * @returns {Promise<Array<{share: string, shareIndex: number | null}>>} Array of parsed share objects.
      * ShareIndex might be null if not found or invalid in CSV, but share data itself is primary.
      */
     const loadSharesFromCsv = async (file) => {
@@ -1608,7 +1628,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 atob(stdCsv);
                                 // ShareIndex from CSV is now optional, it's embedded in the share itself.
                                 // We can pass a temporary index or null.
-                                shares.push({ Share: shareStr, ShareIndex: i }); // Use line number as a temp index
+                                shares.push({ share: shareStr, shareIndex: i }); // Use line number as a temp index
                             } catch (e) {
                                 logger.warn(`Skipping line ${i + 1} in CSV: Invalid Base64 sequence found: ${shareStr.substring(0, 30)}...`);
                             }
@@ -1641,7 +1661,7 @@ document.addEventListener('DOMContentLoaded', () => {
     /**
      * Parses shares pasted into the textarea, extracting Base64 strings.
      * @param {string} text - The text content from the textarea.
-     * @returns {Array<{ShareIndex: number, Share: string}>} Array of potential share objects.
+     * @returns {Array<{shareIndex: number, share: string}>} Array of potential share objects.
      * @throws {Error} If no valid-looking shares are found.
      */
     const parseManualShares = (text) => {
@@ -1665,7 +1685,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (pad) stdB64 += '='.repeat(4 - pad);
                     atob(stdB64);
                     // Add the potential share using line number as a temporary index
-                    shares.push({ ShareIndex: i + 1, Share: share });
+                    shares.push({ shareIndex: i + 1, share: share });
                 } catch (e) {
                     logger.warn(`Skipping line ${i + 1}: Invalid Base64 sequence found: ${share.substring(0, 30)}...`);
                 }
@@ -1684,7 +1704,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         logger.info(`Parsed ${shares.length} potential shares from text area.`);
-        return shares; // Array of { ShareIndex: number, Share: string }
+        return shares; // Array of { shareIndex: number, share: string }
     };
 
 
@@ -1980,7 +2000,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Wrap the heavy crypto operation with the unified loading sheet
             const shares = await executeWithLoadingSheet(
-                () => splitSecret(password, n, k, encryptionKey, comment, isStealth),
+                () => splitSecret(password, n, k, { encryptionKey, comment, stealth: isStealth, schema: (cryptoSchemaSelect ? cryptoSchemaSelect.value : null) }),
                 safeTranslate('generate.loading_title', 'Forging Cryptographic Shares...'),
                 safeTranslate('generate.loading_subtitle', 'Securing with Two-Factor Encryption...')
             );
@@ -2010,7 +2030,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                         // --- CORRECTED Filename Logic ---
                         // Get n and k from the input fields used during generation
-                        const meta = inspectShare(currentGeneratedShares.get()[0].Share);
+                        const meta = inspectShare(currentGeneratedShares.get()[0].share);
                         const familyId = meta.isValid ? meta.familyId : 'unknown';
                         const filename = `piecekeeper_shares_(${familyId}).csv`;
                         tempLink.download = filename;
@@ -2071,21 +2091,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
         let allSharesText = '';
         currentGeneratedShares.get().forEach((shareObject, index) => {
-            const metadata = inspectShare(shareObject.Share);
+            const metadata = inspectShare(shareObject.share);
             const familyId = metadata.isValid ? metadata.familyId : 'N/A';
-            const comment = shareObject.Comment || 'None';
+            const comment = shareObject.comment || 'None';
             // Use the stored timestamp which should be ISO format, then convert to locale for display
             let generatedTime = 'Unknown';
-            if (shareObject.Timestamp) {
-                generatedTime = new Date(shareObject.Timestamp).toLocaleString();
+            if (shareObject.timestamp) {
+                generatedTime = new Date(shareObject.timestamp).toLocaleString();
             } else if (metadata.isValid) {
                 generatedTime = metadata.timestamp;
             }
 
             // Header for the share
-            allSharesText += `// Share ${shareObject.ShareIndex} of ${lastGeneratedN.get()} (K=${lastGeneratedK.get()}) - SetID: ${familyId} - Generated: ${generatedTime} - Note: ${comment}\n`;
+            allSharesText += `// Share ${shareObject.shareIndex} of ${lastGeneratedN.get()} (K=${lastGeneratedK.get()}) - SetID: ${familyId} - Generated: ${generatedTime} - Note: ${comment}\n`;
             // The share itself
-            allSharesText += `${shareObject.Share}\n`;
+            allSharesText += `${shareObject.share}\n`;
             // Add an extra line break between shares, but not after the last one
             if (index < currentGeneratedShares.get().length - 1) {
                 allSharesText += '\n';
@@ -2120,27 +2140,27 @@ document.addEventListener('DOMContentLoaded', () => {
                  * @returns {string} HTML string for the printable page.
                  */
     preparePrintableShareHTML = (shareObject, qrCodeDataUrl, totalSharesN, thresholdK) => {
-        logger.info(`preparePrintableShareHTML called for ShareIndex: ${shareObject.ShareIndex}. IsEncrypted: ${shareObject.IsEncrypted}`);
+        logger.info(`preparePrintableShareHTML called for ShareIndex: ${shareObject.shareIndex}. IsEncrypted: ${shareObject.isEncrypted}`);
         // logger.info('Share Object for Single Printing:', JSON.parse(JSON.stringify(shareObject)));
 
-        const metadata = inspectShare(shareObject.Share);
+        const metadata = inspectShare(shareObject.share);
         const familyId = metadata.isValid ? metadata.familyId : 'N/A';
-        const displayTimestamp = shareObject.Timestamp ?
-            (new Date(shareObject.Timestamp).toLocaleString()) :
+        const displayTimestamp = shareObject.timestamp ?
+            (new Date(shareObject.timestamp).toLocaleString()) :
             (metadata.isValid ? metadata.timestamp : 'Unknown');
 
-        let pVer = shareObject.Version || (typeof metadata !== 'undefined' && metadata && metadata.isValid ? metadata.version : 'v1');
+        let pVer = shareObject.version || (typeof metadata !== 'undefined' && metadata && metadata.isValid ? metadata.version : 'v1');
         const cardHtml = buildShareCardHTML({
-            shareIndex: shareObject.ShareIndex,
+            shareIndex: shareObject.shareIndex,
             totalN: totalSharesN,
             thresholdK: thresholdK,
             qrCodeDataUrl: qrCodeDataUrl,
             version: pVer,
             familyId: familyId,
-            comment: shareObject.Comment || (typeof metadata !== 'undefined' && metadata && metadata.isValid ? metadata.comment : 'None'),
+            comment: shareObject.comment || (typeof metadata !== 'undefined' && metadata && metadata.isValid ? metadata.comment : 'None'),
             timestamp: displayTimestamp,
-            isEncrypted: shareObject.IsEncrypted === true || (typeof metadata !== 'undefined' && metadata && metadata.isValid ? metadata.isEncrypted : false),
-            shareString: shareObject.Share,
+            isEncrypted: shareObject.isEncrypted === true || (typeof metadata !== 'undefined' && metadata && metadata.isValid ? metadata.isEncrypted : false),
+            shareString: shareObject.share,
             isCombined: false
         }, 'print');
 
@@ -2225,7 +2245,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             logger.info('Preparing to print all shares...');
 
-            const firstMeta = inspectShare(currentGeneratedShares.get()[0].Share);
+            const firstMeta = inspectShare(currentGeneratedShares.get()[0].share);
             const printFamilyId = firstMeta.isValid ? firstMeta.familyId : 'unknown';
             let combinedHtml = `
                     <!DOCTYPE html>
@@ -2295,29 +2315,29 @@ document.addEventListener('DOMContentLoaded', () => {
 
             for (let i = 0; i < currentGeneratedShares.get().length; i++) {
                 const shareObj = currentGeneratedShares.get()[i];
-                logger.info(`Processing share ${shareObj.ShareIndex} for 'Print All'. IsEncrypted: ${shareObj.IsEncrypted}`);
+                logger.info(`Processing share ${shareObj.shareIndex} for 'Print All'. IsEncrypted: ${shareObj.isEncrypted}`);
 
-                const meta = inspectShare(shareObj.Share);
+                const meta = inspectShare(shareObj.share);
                 const ts = meta.isValid ? meta.timestamp : 'Unknown';
                 const fam = meta.isValid ? meta.familyId : 'N/A';
                 const comment = meta.isValid ? meta.comment : 'None';
                 const isEncrypted = meta.isValid ? meta.isEncrypted : false;
 
                 let qrUrl = '';
-                try { const previewBytes = base64ToBytes(shareObj.Share); qrUrl = await QRCode.toDataURL([{ data: previewBytes, mode: 'byte' }], { errorCorrectionLevel: 'Q' }); } catch (w) { }
+                try { const previewBytes = base64ToBytes(shareObj.share); qrUrl = await QRCode.toDataURL([{ data: previewBytes, mode: 'byte' }], { errorCorrectionLevel: 'Q' }); } catch (w) { }
 
-                let pVer = shareObj.Version || (meta.isValid ? meta.version : 'v1');
+                let pVer = shareObj.version || (meta.isValid ? meta.version : 'v1');
                 combinedHtml += ` <div class="share-page-container" style="page-break-after: always; padding-bottom: 20px;">${buildShareCardHTML({
-                    shareIndex: shareObj.ShareIndex,
+                    shareIndex: shareObj.shareIndex,
                     totalN: lastGeneratedN.get(),
                     thresholdK: lastGeneratedK.get(),
                     qrCodeDataUrl: qrUrl,
                     version: pVer,
                     familyId: fam,
-                    comment: shareObj.Comment || comment,
-                    timestamp: shareObj.Timestamp ? new Date(shareObj.Timestamp).toLocaleString() : ts,
-                    isEncrypted: shareObj.IsEncrypted === true || isEncrypted,
-                    shareString: shareObj.Share,
+                    comment: shareObj.comment || comment,
+                    timestamp: shareObj.timestamp ? new Date(shareObj.timestamp).toLocaleString() : ts,
+                    isEncrypted: shareObj.isEncrypted === true || isEncrypted,
+                    shareString: shareObj.share,
                     isCombined: true
                 }, 'print')}</div> `;
             }
@@ -2373,7 +2393,7 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 const parsedShares = parseManualShares(rawText);
                 if (parsedShares && parsedShares.length > 0) {
-                    await displayShareInspectionDetails(parsedShares[0].Share);
+                    await displayShareInspectionDetails(parsedShares[0].share);
                 } else {
                     flashButton(inspectSubmitButton, safeTranslate('toast.invalid_data', 'Invalid Data'), 'rose');
                 }
@@ -3301,7 +3321,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
             if (typeof currentGeneratedShares.get() !== 'undefined' && currentGeneratedShares.get().length > 0) {
-                requestNfcPermission(() => { startNfcMintingFlow(currentGeneratedShares.get().map(s => s.Share)); });
+                requestNfcPermission(() => { startNfcMintingFlow(currentGeneratedShares.get().map(s => s.share)); });
             }
         }
 
@@ -3368,7 +3388,7 @@ export const printSingleShare = async (shareObject) => {
     // Fallback: extract N/K from the share binary metadata
     if (n == null || k == null) {
         try {
-            const meta = inspectShare(shareObject.Share);
+            const meta = inspectShare(shareObject.share);
             if (meta.isValid && meta.showParsedValues) {
                 n = n ?? meta.totalN;
                 k = k ?? meta.thresholdK;
@@ -3379,10 +3399,10 @@ export const printSingleShare = async (shareObject) => {
         logger.error('Print single share failed: could not determine N/K from state or share metadata.');
         return;
     }
-    logger.info(`Preparing to print share index: ${shareObject.ShareIndex}`);
+    logger.info(`Preparing to print share index: ${shareObject.shareIndex}`);
     try {
         const canvas = document.createElement('canvas');
-        const printShareBytes = base64ToBytes(shareObject.Share);
+        const printShareBytes = base64ToBytes(shareObject.share);
         await QRCode.toCanvas(canvas, [{ data: printShareBytes, mode: 'byte' }], { width: 256, margin: 2, errorCorrectionLevel: 'Q' });
         const qrCodeDataUrl = canvas.toDataURL('image/png');
 
@@ -3409,7 +3429,7 @@ export const printSingleShare = async (shareObject) => {
         }
     } catch (error) {
         logger.error('Error preparing share for printing:', error);
-        logger.error(`Error printing share ${shareObject.ShareIndex}: ${error.message}`);
+        logger.error(`Error printing share ${shareObject.shareIndex}: ${error.message}`);
     }
 };
 
@@ -3421,22 +3441,22 @@ export const printSingleShare = async (shareObject) => {
 export const emailSingleShare = async (shareObject) => {
     if (!shareObject) return;
     const tr = safeTranslate;
-    logger.info(`Preparing to email share index: ${shareObject.ShareIndex}`);
+    logger.info(`Preparing to email share index: ${shareObject.shareIndex}`);
     try {
-        const metadata = inspectShare(shareObject.Share);
+        const metadata = inspectShare(shareObject.share);
         const familyId = metadata.isValid ? metadata.familyId : 'N/A';
-        const displayTimestamp = shareObject.Timestamp ?
-            (new Date(shareObject.Timestamp).toLocaleString()) :
+        const displayTimestamp = shareObject.timestamp ?
+            (new Date(shareObject.timestamp).toLocaleString()) :
             (metadata.isValid ? metadata.timestamp : 'Unknown');
 
-        const subject = tr('email.subject', 'PieceKeeper Share - Index {index}').replace('{index}', shareObject.ShareIndex);
+        const subject = tr('email.subject', 'PieceKeeper Share - Index {index}').replace('{index}', shareObject.shareIndex);
         let body = `${tr('email.body_intro', 'Here is your PieceKeeper share:')}\n\n`;
-        body += `${tr('email.share_index', 'Share Index:')} ${shareObject.ShareIndex}\n`;
+        body += `${tr('email.share_index', 'Share Index:')} ${shareObject.shareIndex}\n`;
         body += `${tr('email.set_id', 'Set ID:')} ${familyId}\n`;
-        body += `${tr('email.comment', 'Comment/Note:')} ${shareObject.Comment || tr('email.none', 'None')}\n`;
+        body += `${tr('email.comment', 'Comment/Note:')} ${shareObject.comment || tr('email.none', 'None')}\n`;
         body += `${tr('email.generated', 'Generated:')} ${displayTimestamp}\n`;
-        body += `${tr('email.password_enc', 'Additional password encryption:')} ${shareObject.IsEncrypted ? tr('email.yes', 'Yes') : tr('email.no', 'No')}\n\n`;
-        body += `${tr('email.share_data', 'Share Data (Base64):')}\n${shareObject.Share}\n\n`;
+        body += `${tr('email.password_enc', 'Additional password encryption:')} ${shareObject.isEncrypted ? tr('email.yes', 'Yes') : tr('email.no', 'No')}\n\n`;
+        body += `${tr('email.share_data', 'Share Data (Base64):')}\n${shareObject.share}\n\n`;
         body += `${tr('email.instructions', "To reconstruct, paste this share into PieceKeeper's Reconstruct tab, or use the app's QR scanner to scan the QR code from the Generate screen.")}\n\n`;
         body += `${tr('email.keep_secure', 'Keep this share secure.')}\n\nPieceKeeper: https://github.com/MidnightLogic/PieceKeeper\n`;
 
@@ -3447,6 +3467,6 @@ export const emailSingleShare = async (shareObject) => {
 
     } catch (error) {
         logger.error('Error preparing share for email:', error);
-        logger.error(`Error emailing share ${shareObject.ShareIndex}: ${error.message}`);
+        logger.error(`Error emailing share ${shareObject.shareIndex}: ${error.message}`);
     }
 };

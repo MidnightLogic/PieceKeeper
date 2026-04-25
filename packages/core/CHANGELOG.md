@@ -5,6 +5,33 @@ All notable changes to `@midnightlogic/piecekeeper-crypto` will be documented in
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0] - 2026-04-25
+
+### ⚠️ BREAKING CHANGES
+
+- **`splitSecret` Options Object** — The function now accepts `(secret, n, k, options?)` instead of 7 positional arguments. The `options` object supports `encryptionKey`, `comment`, `stealth`, `schema`, and `kdfOverrides`.
+- **camelCase Return Keys** — All share objects returned by `splitSecret` now use camelCase properties: `shareIndex`, `share`, `comment`, `timestamp`, `version`, `isEncrypted` (previously `ShareIndex`, `Share`, `Comment`, `Timestamp`, `Version`, `IsEncrypted`).
+- **Throw-Only `reconstructSecret`** — The function now throws typed errors on failure instead of returning `{ success: false, error }`. On success it returns `{ secret, metadata }` (no `success` property).
+- **Metadata Key Renames** — `reconstructSecret` metadata uses `comment` (was `note`) and `timestamp` (was `date`).
+
+### Added
+
+- **Typed Error Hierarchy** — 18 exported error classes extending `PieceKeeperError`, each with a machine-readable `.code` property for programmatic `catch` handling. See README for the full hierarchy.
+- **`kdfOverrides` Option** — Per-call KDF parameter overrides (e.g., `{ memory_cost: 131072 }`) that merge onto the resolved schema, giving power users fine-grained control without defining custom schemas.
+- **`.npmignore`** — Prevents `src/`, `tests/`, and config files from being published to the NPM registry.
+
+### Changed
+
+- **`deriveKey` Error** — Fallback error now throws `UnknownSchemaError` with the schema's `kdf_algorithm` for debuggability (was a vague `'unresolved'` string).
+- **`binary.js`** — Invalid Base64 input now throws `InvalidBase64Error` instead of a generic `Error`.
+- **Test Suite** — Expanded from 19 to 29 tests covering typed error assertions, kdfOverrides, and camelCase verification.
+
+### Removed
+
+- `{ success: false }` return pattern from `reconstructSecret` — all failures are now exceptions.
+- PascalCase share return keys — no backward-compatible aliases.
+- Positional arguments beyond `(secret, n, k)` — use the options object.
+
 ## [1.0.1] - 2026-04-24
 
 ### Added
@@ -44,4 +71,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `SCHEMA_STORAGE_KEY` — moved to the PWA layer (localStorage is a UI concern, not a crypto module concern).
 
+[2.0.0]: https://github.com/MidnightLogic/PieceKeeper/releases/tag/core-v2.0.0
 [1.0.1]: https://github.com/MidnightLogic/PieceKeeper/releases/tag/core-v1.0.1

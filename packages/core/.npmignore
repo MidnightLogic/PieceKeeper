@@ -1,0 +1,14 @@
+# Source (compiled to dist/ via tsup)
+src/
+
+# Tests
+tests/
+
+# Build & dev config
+tsup.config.js
+vitest.config.js
+.eslintrc*
+eslint.config.js
+
+# Changelog (not needed in the registry)
+CHANGELOG.md

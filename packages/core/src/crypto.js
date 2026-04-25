@@ -1,8 +1,8 @@
 /**
- * PieceKeeper Core — Cryptographic Engine
+ * PieceKeeper Core — Cryptographic Engine (v2.0.0)
  *
  * AES-256-GCM encryption/decryption, KDF orchestration (PBKDF2 / Argon2id / scrypt),
- * and the complete Shamir's Secret Sharing create/reconstruct pipeline.
+ * and the complete Shamir's Secret Sharing split/reconstruct pipeline.
  *
  * This module calls hash-wasm directly (no Web Worker indirection).
  * For browser contexts, callers should offload heavy operations to a Worker.
@@ -15,6 +15,15 @@ import { getCryptoRandomBigInt, modularInverse, bigIntToBytes, bytesToBigInt } f
 import { bytesToBase64, inspectShare } from './binary.js';
 import { newRandomPolynomial, invokePolynomial } from './shamir.js';
 import { APP_CONFIG } from './config.js';
+import {
+    PieceKeeperError,
+    ValidationError, SecretEmptyError, SecretTooLongError,
+    ThresholdExceededError, EncryptionKeyTooLongError,
+    CorruptedShareError,
+    InsufficientSharesError, SetMismatchError, IntegrityCheckError, PasswordRequiredError,
+    DecryptionError, WrongPasswordError, DataTooShortError,
+    UnknownSchemaError,
+} from './errors.js';
 
 const PRIME_TABLE = APP_CONFIG.PRIME_TABLE;
 
@@ -44,11 +53,11 @@ export const setLogger = (logger) => {
  * Stealth mode forces the largest prime (index 4) and 256-byte boundary.
  *
  * @param {number} payloadByteLength - The raw payload size in bytes.
- * @param {boolean} isStealth - Whether stealth mode is active.
+ * @param {boolean} stealth - Whether stealth mode is active.
  * @returns {{ index: number, prime: bigint, boundary: number }}
  */
-const resolvePrime = (payloadByteLength, isStealth) => {
-    if (isStealth) return { index: 4, prime: PRIME_TABLE[4].prime, boundary: PRIME_TABLE[4].boundary };
+const resolvePrime = (payloadByteLength, stealth) => {
+    if (stealth) return { index: 4, prime: PRIME_TABLE[4].prime, boundary: PRIME_TABLE[4].boundary };
     for (let i = 0; i < PRIME_TABLE.length; i++) {
         if (payloadByteLength <= PRIME_TABLE[i].boundary) {
             return { index: i, prime: PRIME_TABLE[i].prime, boundary: PRIME_TABLE[i].boundary };
@@ -67,7 +76,7 @@ const resolvePrime = (payloadByteLength, isStealth) => {
  * @param {Uint8Array} salt - The cryptographic salt.
  * @param {import('./config.js').CryptoSchema} schema - The KDF schema configuration.
  * @returns {Promise<Uint8Array>} The derived key bytes (32 bytes for AES-256).
- * @throws {Error} If the schema structure is unrecognized.
+ * @throws {UnknownSchemaError} If the schema structure is unrecognized.
  */
 export const deriveKey = async (passwordStr, salt, schema) => {
     const passwordBytes = new TextEncoder().encode(passwordStr);
@@ -119,7 +128,7 @@ export const deriveKey = async (passwordStr, salt, schema) => {
         });
     }
 
-    throw new Error('Unknown cryptographic schema structure');
+    throw new UnknownSchemaError(schema.kdf_algorithm || JSON.stringify(schema).substring(0, 80));
 };
 
 // --- Encryption / Decryption ---
@@ -131,15 +140,17 @@ export const deriveKey = async (passwordStr, salt, schema) => {
  * @param {string|null} key - The encryption password (null = no encryption).
  * @param {Uint8Array} [aadBytes] - Additional Authenticated Data for AEAD.
  * @param {string} [schemaVersion] - KDF schema version key (defaults to APP_CONFIG.DEFAULT_SCHEMA).
+ * @param {import('./config.js').CryptoSchema} [resolvedSchema] - Pre-resolved schema object (overrides schemaVersion lookup).
  * @returns {Promise<Uint8Array>} The encrypted output: salt || iv || ciphertext.
+ * @throws {UnknownSchemaError} If the schema version is not recognized.
  */
-export const encryptBytes = async (dataBytes, key, aadBytes = new Uint8Array(0), schemaVersion = null) => {
+export const encryptBytes = async (dataBytes, key, aadBytes = new Uint8Array(0), schemaVersion = null, resolvedSchema = null) => {
     if (!key) return dataBytes; // No encryption, return raw bytes
 
     try {
         const activeVersion = schemaVersion || APP_CONFIG.DEFAULT_SCHEMA;
-        const expectedSchema = APP_CONFIG.CRYPTO_SCHEMAS[activeVersion];
-        if (!expectedSchema) throw new Error(`Unknown crypto schema version: ${activeVersion}`);
+        const expectedSchema = resolvedSchema || APP_CONFIG.CRYPTO_SCHEMAS[activeVersion];
+        if (!expectedSchema) throw new UnknownSchemaError(activeVersion);
         const saltBytes = expectedSchema.salt_bytes;
         const salt = crypto.getRandomValues(new Uint8Array(saltBytes));
 
@@ -160,8 +171,9 @@ export const encryptBytes = async (dataBytes, key, aadBytes = new Uint8Array(0),
 
         return resultBytes;
     } catch (e) {
+        if (e instanceof PieceKeeperError) throw e;
         _log.error(`Encryption error: ${e.message}`);
-        throw new Error(`Encryption failed: ${e.message}`);
+        throw new PieceKeeperError(`Encryption failed: ${e.message}`, 'ENCRYPTION_FAILED');
     }
 };
 
@@ -173,23 +185,27 @@ export const encryptBytes = async (dataBytes, key, aadBytes = new Uint8Array(0),
  * @param {boolean} isEncryptedFlag - Whether the data is actually encrypted.
  * @param {string} schemaVersion - The KDF schema version used during encryption.
  * @param {Uint8Array} [aadBytes] - Additional Authenticated Data for AEAD verification.
+ * @param {import('./config.js').CryptoSchema} [resolvedSchema] - Pre-resolved schema object (overrides schemaVersion lookup).
  * @returns {Promise<Uint8Array>} The decrypted plaintext bytes.
- * @throws {Error} If the password is wrong or the data is corrupted.
+ * @throws {PasswordRequiredError} If the data is encrypted but no key is provided.
+ * @throws {WrongPasswordError} If the decryption password is incorrect.
+ * @throws {DataTooShortError} If the encrypted data is malformed.
+ * @throws {UnknownSchemaError} If the schema version is not recognized.
  */
-export const decryptBytes = async (encryptedBytes, key, isEncryptedFlag, schemaVersion, aadBytes = new Uint8Array(0)) => {
+export const decryptBytes = async (encryptedBytes, key, isEncryptedFlag, schemaVersion, aadBytes = new Uint8Array(0), resolvedSchema = null) => {
     if (!isEncryptedFlag) return encryptedBytes;
 
-    if (!key) throw new Error('Encryption password is required to decrypt these shares.');
+    if (!key) throw new PasswordRequiredError();
 
     try {
         const resolvedVersion = schemaVersion || APP_CONFIG.DEFAULT_SCHEMA;
-        const expectedSchema = APP_CONFIG.CRYPTO_SCHEMAS[resolvedVersion];
-        if (!expectedSchema) throw new Error(`Unknown crypto schema version: ${resolvedVersion}`);
+        const expectedSchema = resolvedSchema || APP_CONFIG.CRYPTO_SCHEMAS[resolvedVersion];
+        if (!expectedSchema) throw new UnknownSchemaError(resolvedVersion);
         const saltLen = expectedSchema.salt_bytes;
         const ivLen = expectedSchema.iv_bytes;
 
         if (encryptedBytes.length < (saltLen + ivLen)) {
-            throw new Error('Encrypted data is too short to contain salt and IV.');
+            throw new DataTooShortError();
         }
 
         const salt = encryptedBytes.slice(0, saltLen);
@@ -207,14 +223,34 @@ export const decryptBytes = async (encryptedBytes, key, isEncryptedFlag, schemaV
 
         return new Uint8Array(decrypted);
     } catch (e) {
+        if (e instanceof PieceKeeperError) throw e;
         if (e.name === 'OperationError' || e.message.includes('decrypt')) {
-            throw new Error('Decryption failed. Please double-check the encryption password.');
+            throw new WrongPasswordError();
         }
-        throw new Error(`Decryption failed: ${e.message}`);
+        throw new DecryptionError(`Decryption failed: ${e.message}`);
     }
 };
 
 // --- Share Generation ---
+
+/**
+ * @typedef {Object} SplitOptions
+ * @property {string} [encryptionKey=''] - Optional AES-256-GCM encryption password.
+ * @property {string} [comment=''] - Optional metadata comment embedded in each share (max 32 chars).
+ * @property {boolean} [stealth=false] - When true, forces 2048-bit prime and uniform-length shares.
+ * @property {string} [schema] - KDF schema version key (defaults to DEFAULT_SCHEMA).
+ * @property {Object} [kdfOverrides] - Per-call KDF parameter overrides spread onto the resolved schema.
+ */
+
+/**
+ * @typedef {Object} ShareObject
+ * @property {number} shareIndex - The 1-based share index.
+ * @property {string} share - Base64URL-encoded binary share envelope.
+ * @property {string} comment - Embedded comment string.
+ * @property {string} timestamp - ISO 8601 creation timestamp.
+ * @property {string} version - Binary schema version string (e.g. "2.0").
+ * @property {boolean} isEncrypted - Whether the share payload is encrypted.
+ */
 
 /**
  * Splits a secret into N cryptographic shares using Shamir's Secret Sharing.
@@ -226,42 +262,56 @@ export const decryptBytes = async (encryptedBytes, key, isEncryptedFlag, schemaV
  * @param {string} secret - The secret text to split (max 250 UTF-8 bytes).
  * @param {number} n - Total number of shares to generate (1–64).
  * @param {number} k - Minimum threshold of shares required for reconstruction.
- * @param {string} [encryptionKey=''] - Optional AES-256-GCM encryption password. Pass empty string for none.
- * @param {string} [comment=''] - Optional metadata comment embedded in each share (max 32 chars).
- * @param {boolean} [isStealth=false] - When true, forces 2048-bit prime and uniform-length shares.
- * @param {string|null} [schemaVersion=null] - KDF schema version key (defaults to APP_CONFIG.DEFAULT_SCHEMA).
- * @returns {Promise<Array<{ShareIndex: number, Share: string, Comment: string, Timestamp: string, Version: string, IsEncrypted: boolean}>>} Array of generated share objects.
- * @throws {Error} If k > n, k < 1, secret is empty, or secret exceeds byte limit.
+ * @param {SplitOptions} [options={}] - Optional configuration.
+ * @returns {Promise<ShareObject[]>} Array of generated share objects.
+ * @throws {SecretEmptyError} If secret is empty.
+ * @throws {SecretTooLongError} If secret exceeds MAX_SECRET_LENGTH bytes.
+ * @throws {ThresholdExceededError} If k > n.
+ * @throws {ValidationError} If k < 1 or n < 1.
+ * @throws {EncryptionKeyTooLongError} If encryption key exceeds MAX_ENCRYPTION_KEY_LENGTH.
  */
-export async function splitSecret(secret, n, k, encryptionKey, comment, isStealth = false, schemaVersion = null) {
-    if (k > n) throw new Error('Threshold (k) cannot be greater than total shares (n).');
-    if (k < 1 || n < 1) throw new Error('k and n must be at least 1.');
-    if (!secret) throw new Error('Secret cannot be empty.');
+export async function splitSecret(secret, n, k, options = {}) {
+    const {
+        encryptionKey = '',
+        comment = '',
+        stealth = false,
+        schema = null,
+        kdfOverrides = null,
+    } = options;
+
+    if (k > n) throw new ThresholdExceededError(n, k);
+    if (k < 1 || n < 1) throw new ValidationError('k and n must be at least 1.', 'INVALID_THRESHOLD');
+    if (!secret) throw new SecretEmptyError();
     if (encryptionKey && encryptionKey.length > APP_CONFIG.MAX_ENCRYPTION_KEY_LENGTH) {
-        throw new Error(`Encryption password exceeds max length (${APP_CONFIG.MAX_ENCRYPTION_KEY_LENGTH} chars).`);
+        throw new EncryptionKeyTooLongError(APP_CONFIG.MAX_ENCRYPTION_KEY_LENGTH);
     }
 
-    const activeSchemaVersion = schemaVersion || APP_CONFIG.DEFAULT_SCHEMA;
+    const activeSchemaVersion = schema || APP_CONFIG.DEFAULT_SCHEMA;
 
-    const encoder_pw = new TextEncoder();
-    const secretBytes = encoder_pw.encode(secret);
+    // Resolve effective schema (with optional per-call KDF overrides)
+    const baseSchema = APP_CONFIG.CRYPTO_SCHEMAS[activeSchemaVersion];
+    if (!baseSchema) throw new UnknownSchemaError(activeSchemaVersion);
+    const effectiveSchema = kdfOverrides ? { ...baseSchema, ...kdfOverrides } : null;
+
+    const encoder_secret = new TextEncoder();
+    const secretBytes = encoder_secret.encode(secret);
     const secretLen = secretBytes.length;
 
     // Enforce byte-level bound: marker(1) + secretLen(1) + secret + checksum(4) <= 256
     if (secretLen > APP_CONFIG.MAX_SECRET_LENGTH) {
-        throw new Error(`Secret exceeds maximum byte limit (${APP_CONFIG.MAX_SECRET_LENGTH} bytes). Use fewer multi-byte characters.`);
+        throw new SecretTooLongError(APP_CONFIG.MAX_SECRET_LENGTH, secretLen);
     }
 
-    // --- Integrity Checksum: [0x01 marker][1-byte secretLen][passwordBytes][4-byte SHA-256 truncated] ---
-    const pwDigest = new Uint8Array(await crypto.subtle.digest('SHA-256', secretBytes));
-    const checksumBytes = pwDigest.slice(0, 4);
+    // --- Integrity Checksum: [0x01 marker][1-byte secretLen][secretBytes][4-byte SHA-256 truncated] ---
+    const secretDigest = new Uint8Array(await crypto.subtle.digest('SHA-256', secretBytes));
+    const checksumBytes = secretDigest.slice(0, 4);
 
     // Resolve dynamic prime based on actual payload size
     const rawPayloadLen = 1 + 1 + secretLen + 4; // marker + len + secret + checksum
-    const { index: primeIndex, prime, boundary } = resolvePrime(rawPayloadLen, isStealth);
+    const { index: primeIndex, prime, boundary } = resolvePrime(rawPayloadLen, stealth);
 
     // Build combined payload — padded to boundary in stealth mode
-    const totalPayloadLen = isStealth ? boundary : rawPayloadLen;
+    const totalPayloadLen = stealth ? boundary : rawPayloadLen;
     const combinedBytes = new Uint8Array(totalPayloadLen);
     combinedBytes[0] = 0x01;          // Integrity marker
     combinedBytes[1] = secretLen;     // Length prefix
@@ -273,7 +323,7 @@ export async function splitSecret(secret, n, k, encryptionKey, comment, isStealt
 
     // RAM sweep: zero out intermediate buffers
     secretBytes.fill(0);
-    pwDigest.fill(0);
+    secretDigest.fill(0);
     checksumBytes.fill(0);
     combinedBytes.fill(0);
 
@@ -287,8 +337,8 @@ export async function splitSecret(secret, n, k, encryptionKey, comment, isStealt
     const commentBytes = encoder.encode(comment || '');
 
     // --- Flags Byte Bitmask ---
-    // Bit 0: isEncrypted | Bit 1: isStealth | Bits 2-4: primeIndex
-    const flags = (isEncrypted ? 1 : 0) | (isStealth ? 2 : 0) | (primeIndex << 2);
+    // Bit 0: isEncrypted | Bit 1: stealth | Bits 2-4: primeIndex
+    const flags = (isEncrypted ? 1 : 0) | (stealth ? 2 : 0) | (primeIndex << 2);
 
     for (let i = 1; i <= n; i++) {
         _log.info(`[Engine] Forging polynomial share ${i}/${n} (x-intercept: ${i})`);
@@ -320,7 +370,7 @@ export async function splitSecret(secret, n, k, encryptionKey, comment, isStealt
         aadView.setUint16(aadOffset, commentBytes.length, false); aadOffset += 2;
         aadBytes.set(commentBytes, aadOffset); aadOffset += commentBytes.length;
 
-        const payloadBytes = await encryptBytes(innerPayload, encryptionKey, aadBytes, activeSchemaVersion);
+        const payloadBytes = await encryptBytes(innerPayload, encryptionKey, aadBytes, activeSchemaVersion, effectiveSchema);
 
         // --- OUTER BINARY PACKING ---
         const totalLength = aadBytes.length + payloadBytes.length;
@@ -338,12 +388,12 @@ export async function splitSecret(secret, n, k, encryptionKey, comment, isStealt
 
         const versionStr = `${SCHEMA_MAJOR}.${SCHEMA_MINOR}`;
         shares.push({
-            ShareIndex: i,
-            Share: finalShare,
-            Comment: comment || '',
-            Timestamp: new Date(unixTimestamp * 1000).toISOString(),
-            Version: versionStr,
-            IsEncrypted: isEncrypted
+            shareIndex: i,
+            share: finalShare,
+            comment: comment || '',
+            timestamp: new Date(unixTimestamp * 1000).toISOString(),
+            version: versionStr,
+            isEncrypted: isEncrypted
         });
     }
     poly.length = 0;
@@ -353,162 +403,173 @@ export async function splitSecret(secret, n, k, encryptionKey, comment, isStealt
 // --- Secret Reconstruction ---
 
 /**
+ * @typedef {Object} ReconstructionResult
+ * @property {string} secret - The reconstructed secret text.
+ * @property {Object} metadata - Share metadata.
+ * @property {string} metadata.comment - Embedded comment.
+ * @property {string} metadata.timestamp - ISO 8601 creation timestamp.
+ * @property {string} metadata.version - Binary schema version string.
+ * @property {string} metadata.kdfSchema - KDF schema version used.
+ * @property {string} metadata.familyId - 8-char hex Set ID.
+ * @property {number} metadata.n - Total shares in the set.
+ * @property {number} metadata.k - Threshold required for reconstruction.
+ */
+
+/**
  * Reconstructs a secret from k or more Shamir shares using Lagrange interpolation.
  *
  * Validates share integrity (family ID consistency, duplicate detection, checksum verification)
  * and decrypts payloads if shares are encrypted with AES-256-GCM.
  *
- * @param {Array<{ShareIndex?: number, Share: string}>} sharesInput - Array of share objects containing Base64URL-encoded share strings.
- * @param {string|null} [encryptionKey=null] - Decryption password for encrypted shares. Pass empty string or null for unencrypted.
- * @returns {Promise<{success: boolean, secret?: string, error?: string, metadata?: {note: string, date: string, version: string, kdfSchema: string, familyId: string, n: number, k: number}}>} Reconstruction result with secret text and metadata on success.
+ * On success, returns the secret and metadata. On failure, throws a typed error.
+ *
+ * @param {Array<{shareIndex?: number, share: string}>} sharesInput - Array of share objects containing Base64URL-encoded share strings.
+ * @param {string} [encryptionKey=''] - Decryption password for encrypted shares. Pass empty string for unencrypted.
+ * @returns {Promise<ReconstructionResult>} Reconstruction result with secret text and metadata.
+ * @throws {ValidationError} If no shares are provided.
+ * @throws {PasswordRequiredError} If shares are encrypted but no key is provided.
+ * @throws {InsufficientSharesError} If fewer than k shares are provided.
+ * @throws {SetMismatchError} If shares belong to different sets.
+ * @throws {IntegrityCheckError} If checksum verification fails.
+ * @throws {CorruptedShareError} If a share's binary structure is malformed.
+ * @throws {WrongPasswordError} If the decryption password is incorrect.
  */
-export const reconstructSecret = async (sharesInput, encryptionKey = null) => {
-    try {
-        if (!sharesInput || sharesInput.length === 0) return { success: false, error: 'No shares provided.' };
-
-        let n_expected = null, k_expected = null, referenceFamilyId = null;
-        let referenceIsEncrypted = null, referenceComment = null, referenceTimestamp = null, referenceVersion = null;
-        let referencePrimeIndex = null, referenceKdfSchema = null;
-
-        const processedShares = [];
-        const xValues = new Set();
-
-        for (const inputShare of sharesInput) {
-            try {
-                const metadata = inspectShare(inputShare.Share);
-                if (!metadata.isValid) throw new Error(metadata.error);
-                if (!metadata.familyId) throw new Error('Missing Family ID.');
-
-                // Resolve prime from header flags
-                const primeEntry = PRIME_TABLE[metadata.primeIndex];
-                if (!primeEntry) throw new Error(`Unknown prime index: ${metadata.primeIndex}`);
-                const prime = primeEntry.prime;
-
-                const decryptedBytes = await decryptBytes(metadata.payload, encryptionKey, metadata.isEncrypted, metadata.kdfSchema, metadata.aadBytes);
-
-                if (decryptedBytes.length < 4) throw new Error('Decrypted payload too short to contain coordinates.');
-
-                const shareN = decryptedBytes[0];
-                const shareK = decryptedBytes[1];
-                const shareX = BigInt(decryptedBytes[2]);
-                const shareYBytes = decryptedBytes.slice(3);
-
-                let shareY = bytesToBigInt(shareYBytes);
-                shareYBytes.fill(0); // RAM sweep
-                shareY = (shareY % prime + prime) % prime;
-
-                if (n_expected === null) {
-                    n_expected = shareN; k_expected = shareK;
-                    referenceFamilyId = metadata.familyId; referenceIsEncrypted = metadata.isEncrypted;
-                    referenceComment = metadata.comment; referenceTimestamp = metadata.timestamp;
-                    referenceVersion = metadata.version; referencePrimeIndex = metadata.primeIndex;
-                    referenceKdfSchema = metadata.kdfSchema;
-
-                    if (referenceIsEncrypted && !encryptionKey) throw new Error('password_required');
-                } else {
-                    if (shareN !== n_expected || shareK !== k_expected) throw new Error('Inconsistent n/k values.');
-                    if (metadata.familyId !== referenceFamilyId) throw new Error('Set ID mismatch.');
-                    if (metadata.isEncrypted !== referenceIsEncrypted) throw new Error('Encryption status mismatch.');
-                    if (metadata.primeIndex !== referencePrimeIndex) throw new Error('Prime index mismatch.');
-                }
-
-                if (xValues.has(shareX)) continue;
-                xValues.add(shareX);
-                processedShares.push({ X: shareX, Y: shareY });
-
-            } catch (e) {
-                if (e.message === 'password_required') return { success: false, error: 'Encryption password required.' };
-                throw new Error(`Failed to process share ${inputShare.ShareIndex || ''}: ${e.message}`);
-            }
-        }
-
-        if (k_expected === null) return { success: false, error: 'Could not determine threshold (k).' };
-        if (processedShares.length < k_expected) throw new Error('Insufficient shares for reconstruction.');
-
-        // Look up the prime for Lagrange interpolation
-        const prime = PRIME_TABLE[referencePrimeIndex].prime;
-
-        const sharesForReconstruction = processedShares.slice(0, k_expected);
-        _log.info(`[Engine] Executing Lagrange interpolation across ${sharesForReconstruction.length} shares (primeIndex=${referencePrimeIndex})...`);
-        let reconstructedSecretBigInt = 0n;
-
-        for (let i = 0; i < k_expected; i++) {
-            const xi = sharesForReconstruction[i].X;
-            const yi = sharesForReconstruction[i].Y;
-            let lagrangeNumerator = 1n;
-            let lagrangeDenominator = 1n;
-
-            for (let j = 0; j < k_expected; j++) {
-                if (i !== j) {
-                    const xj = sharesForReconstruction[j].X;
-                    lagrangeNumerator = (lagrangeNumerator * (0n - xj)) % prime;
-                    lagrangeDenominator = (lagrangeDenominator * (xi - xj)) % prime;
-                }
-            }
-
-            if (lagrangeDenominator === 0n) return { success: false, error: 'Lagrange denominator is zero.' };
-            const lagrangeBasisPolynomial = (lagrangeNumerator * modularInverse(lagrangeDenominator, prime)) % prime;
-            reconstructedSecretBigInt = (reconstructedSecretBigInt + yi * lagrangeBasisPolynomial) % prime;
-        }
-
-        reconstructedSecretBigInt = (reconstructedSecretBigInt + prime) % prime;
-
-        // --- Integrity Verification (Binary Schema v2: length-prefixed) ---
-        let secretString = '';
-        try {
-            const secretBytes = bigIntToBytes(reconstructedSecretBigInt);
-
-            // Verify marker byte
-            if (secretBytes.length < 7 || secretBytes[0] !== 0x01) {
-                throw new Error('Integrity check failed. Shares are corrupted or tampered with.');
-            }
-
-            // Extract length-prefixed components: [0x01][secretLen][passwordBytes...][4-byte checksum][padding...]
-            const secretLen = secretBytes[1];
-            if (secretLen === 0 || (2 + secretLen + 4) > secretBytes.length) {
-                throw new Error('Integrity check failed. Invalid secret length prefix.');
-            }
-
-            const extractedPasswordBytes = secretBytes.slice(2, 2 + secretLen);
-            const extractedChecksum = secretBytes.slice(2 + secretLen, 2 + secretLen + 4);
-
-            // Recompute SHA-256 and compare first 4 bytes
-            const recomputedDigest = new Uint8Array(
-                await crypto.subtle.digest('SHA-256', extractedPasswordBytes)
-            );
-            const recomputedChecksum = recomputedDigest.slice(0, 4);
-
-            const checksumValid = extractedChecksum.every((b, idx) => b === recomputedChecksum[idx]);
-            if (!checksumValid) {
-                secretBytes.fill(0);
-                extractedPasswordBytes.fill(0);
-                recomputedDigest.fill(0);
-                throw new Error('Integrity check failed. Shares are corrupted or tampered with.');
-            }
-
-            secretString = new TextDecoder().decode(extractedPasswordBytes);
-
-            // RAM sweep
-            secretBytes.fill(0);
-            extractedPasswordBytes.fill(0);
-            extractedChecksum.fill(0);
-            recomputedDigest.fill(0);
-            recomputedChecksum.fill(0);
-        } catch (e) {
-            return { success: false, error: e.message || `Math succeeded, decoding failed: ${e.message}.` };
-        }
-
-        return {
-            success: true,
-            secret: secretString,
-            metadata: {
-                note: referenceComment || 'None', date: referenceTimestamp || 'Unknown',
-                version: referenceVersion, kdfSchema: referenceKdfSchema, familyId: referenceFamilyId,
-                n: n_expected, k: k_expected
-            }
-        };
-
-    } catch (e) {
-        return { success: false, error: e.message };
+export const reconstructSecret = async (sharesInput, encryptionKey = '') => {
+    if (!sharesInput || sharesInput.length === 0) {
+        throw new ValidationError('No shares provided.', 'NO_SHARES');
     }
+
+    let n_expected = null, k_expected = null, referenceFamilyId = null;
+    let referenceIsEncrypted = null, referenceComment = null, referenceTimestamp = null, referenceVersion = null;
+    let referencePrimeIndex = null, referenceKdfSchema = null;
+
+    const processedShares = [];
+    const xValues = new Set();
+
+    for (const inputShare of sharesInput) {
+        const metadata = inspectShare(inputShare.share);
+        if (!metadata.isValid) throw new CorruptedShareError(metadata.error);
+        if (!metadata.familyId) throw new CorruptedShareError('Missing Family ID.');
+
+        // Resolve prime from header flags
+        const primeEntry = PRIME_TABLE[metadata.primeIndex];
+        if (!primeEntry) throw new CorruptedShareError(`Unknown prime index: ${metadata.primeIndex}`);
+        const prime = primeEntry.prime;
+
+        const decryptedBytes = await decryptBytes(metadata.payload, encryptionKey, metadata.isEncrypted, metadata.kdfSchema, metadata.aadBytes);
+
+        if (decryptedBytes.length < 4) throw new CorruptedShareError('Decrypted payload too short to contain coordinates.');
+
+        const shareN = decryptedBytes[0];
+        const shareK = decryptedBytes[1];
+        const shareX = BigInt(decryptedBytes[2]);
+        const shareYBytes = decryptedBytes.slice(3);
+
+        let shareY = bytesToBigInt(shareYBytes);
+        shareYBytes.fill(0); // RAM sweep
+        shareY = (shareY % prime + prime) % prime;
+
+        if (n_expected === null) {
+            n_expected = shareN; k_expected = shareK;
+            referenceFamilyId = metadata.familyId; referenceIsEncrypted = metadata.isEncrypted;
+            referenceComment = metadata.comment; referenceTimestamp = metadata.timestamp;
+            referenceVersion = metadata.version; referencePrimeIndex = metadata.primeIndex;
+            referenceKdfSchema = metadata.kdfSchema;
+
+            if (referenceIsEncrypted && !encryptionKey) throw new PasswordRequiredError();
+        } else {
+            if (shareN !== n_expected || shareK !== k_expected) throw new SetMismatchError('Inconsistent n/k values across shares.');
+            if (metadata.familyId !== referenceFamilyId) throw new SetMismatchError('Set ID mismatch — shares belong to different sets.');
+            if (metadata.isEncrypted !== referenceIsEncrypted) throw new SetMismatchError('Encryption status mismatch across shares.');
+            if (metadata.primeIndex !== referencePrimeIndex) throw new SetMismatchError('Prime index mismatch across shares.');
+        }
+
+        if (xValues.has(shareX)) continue;
+        xValues.add(shareX);
+        processedShares.push({ X: shareX, Y: shareY });
+    }
+
+    if (k_expected === null) throw new ValidationError('Could not determine threshold (k).', 'NO_THRESHOLD');
+    if (processedShares.length < k_expected) throw new InsufficientSharesError(k_expected, processedShares.length);
+
+    // Look up the prime for Lagrange interpolation
+    const prime = PRIME_TABLE[referencePrimeIndex].prime;
+
+    const sharesForReconstruction = processedShares.slice(0, k_expected);
+    _log.info(`[Engine] Executing Lagrange interpolation across ${sharesForReconstruction.length} shares (primeIndex=${referencePrimeIndex})...`);
+    let reconstructedSecretBigInt = 0n;
+
+    for (let i = 0; i < k_expected; i++) {
+        const xi = sharesForReconstruction[i].X;
+        const yi = sharesForReconstruction[i].Y;
+        let lagrangeNumerator = 1n;
+        let lagrangeDenominator = 1n;
+
+        for (let j = 0; j < k_expected; j++) {
+            if (i !== j) {
+                const xj = sharesForReconstruction[j].X;
+                lagrangeNumerator = (lagrangeNumerator * (0n - xj)) % prime;
+                lagrangeDenominator = (lagrangeDenominator * (xi - xj)) % prime;
+            }
+        }
+
+        if (lagrangeDenominator === 0n) throw new IntegrityCheckError('Lagrange denominator is zero — degenerate share set.');
+        const lagrangeBasisPolynomial = (lagrangeNumerator * modularInverse(lagrangeDenominator, prime)) % prime;
+        reconstructedSecretBigInt = (reconstructedSecretBigInt + yi * lagrangeBasisPolynomial) % prime;
+    }
+
+    reconstructedSecretBigInt = (reconstructedSecretBigInt + prime) % prime;
+
+    // --- Integrity Verification (Binary Schema v2: length-prefixed) ---
+    const secretBytes = bigIntToBytes(reconstructedSecretBigInt);
+
+    // Verify marker byte
+    if (secretBytes.length < 7 || secretBytes[0] !== 0x01) {
+        throw new IntegrityCheckError('Integrity check failed. Shares are corrupted or tampered with.');
+    }
+
+    // Extract length-prefixed components: [0x01][secretLen][secretBytes...][4-byte checksum][padding...]
+    const secretLen = secretBytes[1];
+    if (secretLen === 0 || (2 + secretLen + 4) > secretBytes.length) {
+        throw new IntegrityCheckError('Integrity check failed. Invalid secret length prefix.');
+    }
+
+    const extractedSecretBytes = secretBytes.slice(2, 2 + secretLen);
+    const extractedChecksum = secretBytes.slice(2 + secretLen, 2 + secretLen + 4);
+
+    // Recompute SHA-256 and compare first 4 bytes
+    const recomputedDigest = new Uint8Array(
+        await crypto.subtle.digest('SHA-256', extractedSecretBytes)
+    );
+    const recomputedChecksum = recomputedDigest.slice(0, 4);
+
+    const checksumValid = extractedChecksum.every((b, idx) => b === recomputedChecksum[idx]);
+    if (!checksumValid) {
+        secretBytes.fill(0);
+        extractedSecretBytes.fill(0);
+        recomputedDigest.fill(0);
+        throw new IntegrityCheckError('Integrity check failed. Shares are corrupted or tampered with.');
+    }
+
+    const secretString = new TextDecoder().decode(extractedSecretBytes);
+
+    // RAM sweep
+    secretBytes.fill(0);
+    extractedSecretBytes.fill(0);
+    extractedChecksum.fill(0);
+    recomputedDigest.fill(0);
+    recomputedChecksum.fill(0);
+
+    return {
+        secret: secretString,
+        metadata: {
+            comment: referenceComment || '',
+            timestamp: referenceTimestamp || '',
+            version: referenceVersion,
+            kdfSchema: referenceKdfSchema,
+            familyId: referenceFamilyId,
+            n: n_expected,
+            k: k_expected
+        }
+    };
 };

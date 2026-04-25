@@ -1,6 +1,7 @@
 # @midnightlogic/piecekeeper-crypto
 
 [![NPM Version](https://img.shields.io/npm/v/@midnightlogic/piecekeeper-crypto?color=success)](https://www.npmjs.com/package/@midnightlogic/piecekeeper-crypto)
+[![CI](https://github.com/MidnightLogic/PieceKeeper/actions/workflows/publish-npm.yml/badge.svg)](https://github.com/MidnightLogic/PieceKeeper/actions/workflows/publish-npm.yml)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](https://github.com/MidnightLogic/PieceKeeper/blob/main/LICENSE)
 
 Isomorphic Shamir's Secret Sharing + AES-256-GCM encryption for Node.js and browsers.
@@ -17,6 +18,8 @@ Split any secret into `n` shares with a configurable threshold `k` — the secre
 - **Isomorphic** — Works identically in Node.js 18+ and all modern browsers. Ships ESM, CJS, and full TypeScript declarations.
 - **Stealth Mode** — Forces uniform 2048-bit shares that reveal nothing about the secret's actual size.
 - **Integrity Checksums** — SHA-256 truncated checksums detect corrupted or tampered shares during reconstruction.
+- **Typed Error Hierarchy** — 18 exported error classes with machine-readable `.code` properties for programmatic `catch` handling.
+- **Per-Call KDF Overrides** — Power users can override individual KDF parameters (memory, iterations) without defining custom schemas.
 
 ---
 
@@ -36,26 +39,25 @@ npm install @midnightlogic/piecekeeper-crypto
 import { splitSecret } from '@midnightlogic/piecekeeper-crypto';
 
 // Split "my-master-password" into 5 shares, requiring any 3 to reconstruct.
-// No encryption password, with a comment label "backup-key".
-const shares = await splitSecret('my-master-password', 5, 3, '', 'backup-key');
+const shares = await splitSecret('my-master-password', 5, 3, {
+  comment: 'backup-key'
+});
 
 console.log(shares.length); // 5
 
 // Each share is a self-describing Base64URL envelope:
 console.log(shares[0]);
 // {
-//   ShareIndex: 1,
-//   Share:       "AgAIBABlNq4F...",   ← Base64URL-encoded binary
-//   Comment:     "backup-key",
-//   Timestamp:   "2026-04-24T09:00:00.000Z",
-//   Version:     "2.0",
-//   IsEncrypted: false
+//   shareIndex:  1,
+//   share:       "AgAIBABlNq4F...",   ← Base64URL-encoded binary
+//   comment:     "backup-key",
+//   timestamp:   "2026-04-24T09:00:00.000Z",
+//   version:     "2.0",
+//   isEncrypted: false
 // }
 
-// The .Share string is what you distribute — print it, QR-encode it, write to NFC, etc.
-console.log(shares[0].Share); // "AgAIBABlNq4FYmFja3VwLWtleQMFAa3R..."
-console.log(shares[1].Share); // "AgAIBABlNq4FYmFja3VwLWtleQMFAp7X..."
-console.log(shares[2].Share); // "AgAIBABlNq4FYmFja3VwLWtleQMFAwkT..."
+// The .share string is what you distribute — print it, QR-encode it, write to NFC, etc.
+console.log(shares[0].share); // "AgAIBABlNq4FYmFja3VwLWtleQMFAa3R..."
 ```
 
 ### 2. Inspect a Share (Without Decrypting)
@@ -63,8 +65,8 @@ console.log(shares[2].Share); // "AgAIBABlNq4FYmFja3VwLWtleQMFAwkT..."
 ```js
 import { inspectShare } from '@midnightlogic/piecekeeper-crypto';
 
-// You can read the metadata of any share without needing the encryption password.
-const metadata = inspectShare(shares[0].Share);
+// Read metadata without needing the encryption password.
+const metadata = inspectShare(shares[0].share);
 
 console.log(metadata);
 // {
@@ -87,7 +89,7 @@ console.log(metadata);
 ```js
 import { reconstructSecret } from '@midnightlogic/piecekeeper-crypto';
 
-// Provide any 3 of the 5 shares — order doesn't matter, pick any combination.
+// Provide any 3 of the 5 shares — order doesn't matter.
 const result = await reconstructSecret(
   [shares[0], shares[2], shares[4]],  // shares 1, 3, and 5
   ''                                   // no encryption password
@@ -95,11 +97,10 @@ const result = await reconstructSecret(
 
 console.log(result);
 // {
-//   success: true,
 //   secret:  "my-master-password",     ← the original secret!
 //   metadata: {
-//     note:      "backup-key",
-//     date:      "2026-04-24T09:00:00.000Z",
+//     comment:   "backup-key",
+//     timestamp: "2026-04-24T09:00:00.000Z",
 //     version:   "2.0",
 //     kdfSchema: "4",
 //     familyId:  "659bae05",
@@ -108,10 +109,18 @@ console.log(result);
 //   }
 // }
 
-// With fewer than 3 shares, reconstruction fails — no information is leaked:
-const fail = await reconstructSecret([shares[0], shares[1]], '');
-console.log(fail.success); // false
-console.log(fail.error);   // "Insufficient shares for reconstruction."
+// With fewer than 3 shares, reconstruction throws:
+import { InsufficientSharesError } from '@midnightlogic/piecekeeper-crypto';
+
+try {
+  await reconstructSecret([shares[0], shares[1]], '');
+} catch (e) {
+  if (e instanceof InsufficientSharesError) {
+    console.log(e.required); // 3
+    console.log(e.provided); // 2
+    console.log(e.code);     // "INSUFFICIENT_SHARES"
+  }
+}
 ```
 
 ---
@@ -121,127 +130,201 @@ console.log(fail.error);   // "Insufficient shares for reconstruction."
 Shares can be encrypted with a password so that physical possession alone isn't enough:
 
 ```js
-import { splitSecret, reconstructSecret } from '@midnightlogic/piecekeeper-crypto';
+import {
+  splitSecret, reconstructSecret,
+  PasswordRequiredError, WrongPasswordError
+} from '@midnightlogic/piecekeeper-crypto';
 
 // Split with AES-256-GCM encryption (password = "strong-password")
-const encrypted = await splitSecret('seed-phrase-word-list', 3, 2, 'strong-password', 'vault');
+const encrypted = await splitSecret('seed-phrase-word-list', 3, 2, {
+  encryptionKey: 'strong-password',
+  comment: 'vault'
+});
 
 // Each share is encrypted — inspectShare() still works (metadata is plaintext):
-console.log(inspectShare(encrypted[0].Share).isEncrypted); // true
+console.log(inspectShare(encrypted[0].share).isEncrypted); // true
 
-// Reconstruction FAILS without the password:
-const noPass = await reconstructSecret(encrypted.slice(0, 2), '');
-console.log(noPass.success); // false — "Encryption password required."
+// Reconstruction THROWS without the password:
+try {
+  await reconstructSecret(encrypted.slice(0, 2), '');
+} catch (e) {
+  console.log(e instanceof PasswordRequiredError); // true
+}
 
-// Reconstruction FAILS with wrong password:
-const wrongPass = await reconstructSecret(encrypted.slice(0, 2), 'wrong');
-console.log(wrongPass.success); // false — "Decryption failed."
+// Reconstruction THROWS with wrong password:
+try {
+  await reconstructSecret(encrypted.slice(0, 2), 'wrong');
+} catch (e) {
+  console.log(e instanceof WrongPasswordError); // true
+}
 
 // Reconstruction SUCCEEDS with correct password:
 const ok = await reconstructSecret(encrypted.slice(0, 2), 'strong-password');
-console.log(ok.success); // true
-console.log(ok.secret);  // "seed-phrase-word-list"
+console.log(ok.secret); // "seed-phrase-word-list"
+```
+
+---
+
+## `splitSecret` Options Object
+
+The fourth argument accepts an options object for clean, extensible configuration:
+
+```js
+const shares = await splitSecret('my-secret', 5, 3, {
+  encryptionKey: 'optional-password',   // default: '' (no encryption)
+  comment:       'vault-backup',        // default: '' (max 32 chars)
+  stealth:       true,                  // default: false (uniform 2048-bit shares)
+  schema:        '4',                   // default: DEFAULT_SCHEMA ('4' = Argon2id 64MB)
+  kdfOverrides:  { memory_cost: 131072 } // default: null (override individual KDF params)
+});
+```
+
+| Option | Type | Default | Description |
+|---|---|---|---|
+| `encryptionKey` | `string` | `''` | AES-256-GCM password. Empty = no encryption. |
+| `comment` | `string` | `''` | Metadata label embedded in each share (max 32 chars). |
+| `stealth` | `boolean` | `false` | Force uniform 2048-bit shares regardless of secret size. |
+| `schema` | `string` | `'4'` | KDF schema key. See `listSchemas()`. |
+| `kdfOverrides` | `Object` | `null` | Per-call KDF parameter overrides (see below). |
+
+### `kdfOverrides` — Power User KDF Tuning
+
+Override individual KDF parameters without defining a custom schema:
+
+```js
+// Double the default Argon2id memory from 64MB to 128MB
+const hardened = await splitSecret('high-value-secret', 5, 3, {
+  encryptionKey: 'pass',
+  schema: '4',
+  kdfOverrides: {
+    memory_cost: 131072,  // 128MB instead of 64MB
+    time_cost: 5,         // 5 passes instead of 3
+  }
+});
+```
+
+> **⚠️ Important:** `kdfOverrides` changes the KDF parameters used during encryption, but the share header still records the base schema ID. This means reconstruction will use the base schema's default parameters. `kdfOverrides` is designed for advanced scenarios where you control both the split and reconstruct environments.
+
+---
+
+## Typed Error Handling
+
+All errors extend `PieceKeeperError` with a machine-readable `.code` property:
+
+```js
+import {
+  splitSecret, reconstructSecret,
+  PieceKeeperError,
+  SecretEmptyError,
+  ThresholdExceededError,
+  InsufficientSharesError,
+  PasswordRequiredError,
+  WrongPasswordError,
+  IntegrityCheckError,
+  SetMismatchError,
+} from '@midnightlogic/piecekeeper-crypto';
+
+try {
+  const result = await reconstructSecret(shares, password);
+} catch (e) {
+  if (e instanceof PasswordRequiredError) showPasswordPrompt();
+  else if (e instanceof InsufficientSharesError) {
+    console.log(`Need ${e.required - e.provided} more shares`);
+  }
+  else if (e instanceof WrongPasswordError) showWrongPasswordFeedback();
+  else if (e instanceof IntegrityCheckError) showCorruptionWarning();
+  else if (e instanceof SetMismatchError) showMismatchWarning();
+  else throw e; // unexpected
+}
+```
+
+### Error Hierarchy
+
+```
+PieceKeeperError (base — .code, .message, .name)
+├── ValidationError
+│   ├── SecretEmptyError          (SECRET_EMPTY)
+│   ├── SecretTooLongError        (SECRET_TOO_LONG)       .maxBytes, .actualBytes
+│   ├── ThresholdExceededError    (THRESHOLD_EXCEEDED)    .n, .k
+│   └── EncryptionKeyTooLongError (ENCRYPTION_KEY_TOO_LONG) .maxLength
+├── ShareFormatError
+│   ├── InvalidBase64Error        (INVALID_BASE64)
+│   ├── UnsupportedVersionError   (UNSUPPORTED_VERSION)   .version
+│   └── CorruptedShareError       (CORRUPTED_SHARE)
+├── ReconstructionError
+│   ├── InsufficientSharesError   (INSUFFICIENT_SHARES)   .required, .provided
+│   ├── SetMismatchError          (SET_MISMATCH)
+│   ├── IntegrityCheckError       (INTEGRITY_CHECK_FAILED)
+│   └── PasswordRequiredError     (PASSWORD_REQUIRED)
+├── DecryptionError
+│   ├── WrongPasswordError        (WRONG_PASSWORD)
+│   └── DataTooShortError         (DATA_TOO_SHORT)
+└── SchemaError
+    └── UnknownSchemaError        (UNKNOWN_SCHEMA)        .schemaKey
 ```
 
 ---
 
 ## Schema Discovery & Limits
 
-The module ships with 6 KDF schemas and exposes helpers to discover them:
-
 ```js
 import {
-  listSchemas,
-  getSchema,
-  DEFAULT_SCHEMA,
-  MAX_SECRET_LENGTH,
-  MAX_ENCRYPTION_KEY_LENGTH,
-  MAX_COMMENT_LENGTH,
-  MAX_SHARES
+  listSchemas, getSchema, DEFAULT_SCHEMA,
+  MAX_SECRET_LENGTH, MAX_ENCRYPTION_KEY_LENGTH, MAX_COMMENT_LENGTH, MAX_SHARES
 } from '@midnightlogic/piecekeeper-crypto';
 
-// List all available KDF schemas
-console.log(listSchemas());  // ['1', '2', '3', '4', '5', '6']
+console.log(listSchemas());     // ['1', '2', '3', '4', '5', '6']
+console.log(DEFAULT_SCHEMA);    // '4' (Argon2id 64MB)
 
-// Inspect a specific schema
 console.log(getSchema('4'));
-// {
-//   kdf_algorithm: 'Argon2id',
-//   memory_cost:   65536,          ← 64MB RAM
-//   time_cost:     3,
-//   parallelism:   4,
-//   aes_algorithm: 'AES-GCM',
-//   aes_key_length: 256,
-//   salt_bytes:    16,
-//   iv_bytes:      12
-// }
+// { kdf_algorithm: 'Argon2id', memory_cost: 65536, time_cost: 3, parallelism: 4, ... }
 
-console.log(getSchema('6'));
-// {
-//   kdf_algorithm:   'scrypt',
-//   cpu_memory_cost: 131072,       ← N parameter
-//   block_size:      8,
-//   parallelization: 1,
-//   ...
-// }
-
-// Check the default schema used when no schemaVersion is passed to splitSecret()
-console.log(DEFAULT_SCHEMA);          // '4' (Argon2id 64MB)
-
-// System limits — validate user input before calling splitSecret()
-console.log(MAX_SECRET_LENGTH);       // 250  (UTF-8 bytes)
+console.log(MAX_SECRET_LENGTH);        // 250 (UTF-8 bytes)
 console.log(MAX_ENCRYPTION_KEY_LENGTH); // 256 (characters)
-console.log(MAX_COMMENT_LENGTH);      // 32   (characters)
-console.log(MAX_SHARES);              // 64   (max N)
+console.log(MAX_COMMENT_LENGTH);       // 32  (characters)
+console.log(MAX_SHARES);              // 64
 ```
 
 ### Selecting a Schema
 
-Pass the schema key as the last argument to `splitSecret()`:
-
 ```js
 // Use fast PBKDF2 (schema '2') instead of the default Argon2id:
-const fast = await splitSecret('my-secret', 3, 2, 'password', 'fast-mode', false, '2');
+const fast = await splitSecret('my-secret', 3, 2, {
+  encryptionKey: 'password',
+  schema: '2'
+});
 
 // Use scrypt (schema '6'):
-const scryptShares = await splitSecret('my-secret', 3, 2, 'password', '', false, '6');
+const scryptShares = await splitSecret('my-secret', 3, 2, {
+  encryptionKey: 'password',
+  schema: '6'
+});
 ```
 
 ---
 
 ## Stealth Mode (Uniform Share Size)
 
-By default, the engine auto-selects the smallest prime field that fits your secret — a 10-character password produces smaller shares than a 200-byte seed phrase. An attacker who intercepts a share could estimate the secret's length from its size.
+By default, the engine auto-selects the smallest prime field that fits your secret. An attacker who intercepts a share could estimate the secret's length from its size.
 
-**Stealth mode** forces all shares to the maximum 2048-bit prime field with zero-padded payloads, producing **uniform-length shares** regardless of the secret's actual size:
+**Stealth mode** forces all shares to the maximum 2048-bit prime field with zero-padded payloads:
 
 ```js
 import { splitSecret, inspectShare } from '@midnightlogic/piecekeeper-crypto';
 
 // Normal mode — share size reflects secret length
-const normal = await splitSecret(
-  'short',         // secret
-  3,               // n (total shares)
-  2,               // k (threshold)
-  '',              // encryptionKey (empty = no encryption)
-  'normal-test'    // comment
-);
-console.log(normal[0].Share.length);  // ~60 characters (128-bit prime)
+const normal = await splitSecret('short', 3, 2, { comment: 'normal-test' });
+console.log(normal[0].share.length);  // ~60 characters (128-bit prime)
 
 // Stealth mode — fixed large shares regardless of secret size
-const stealth = await splitSecret(
-  'short',         // secret
-  3,               // n
-  2,               // k
-  '',              // encryptionKey
-  'stealth-test',  // comment
-  true             // isStealth ← forces uniform 2048-bit shares
-);
-console.log(stealth[0].Share.length); // ~470 characters (2048-bit prime)
+const stealth = await splitSecret('short', 3, 2, {
+  stealth: true,
+  comment: 'stealth-test'
+});
+console.log(stealth[0].share.length); // ~470 characters (2048-bit prime)
 
 // Metadata reveals stealth was used:
-console.log(inspectShare(stealth[0].Share).isStealth);  // true
-console.log(inspectShare(stealth[0].Share).primeIndex);  // 4 (max tier)
+console.log(inspectShare(stealth[0].share).isStealth);  // true
 ```
 
 > **When to use:** High-security scenarios where share size could leak information about the secret (e.g., distinguishing a short PIN from a long seed phrase).
@@ -250,23 +333,31 @@ console.log(inspectShare(stealth[0].Share).primeIndex);  // 4 (max tier)
 
 ## Integrity & Corruption Detection
 
-Each share contains a truncated SHA-256 checksum. If a share is corrupted, modified, or from a different set, reconstruction fails gracefully:
+Each share contains a truncated SHA-256 checksum. Corrupted or mismatched shares throw typed errors:
 
 ```js
-import { splitSecret, reconstructSecret } from '@midnightlogic/piecekeeper-crypto';
+import {
+  splitSecret, reconstructSecret,
+  IntegrityCheckError, SetMismatchError
+} from '@midnightlogic/piecekeeper-crypto';
 
-const shares = await splitSecret('my-secret', 3, 2, '', 'test');
+const shares = await splitSecret('my-secret', 3, 2, { comment: 'test' });
 
 // Tamper with a share string
-const corrupted = { ...shares[0], Share: shares[0].Share.slice(0, -10) + 'XXXXXXXXXX' };
-const result = await reconstructSecret([corrupted, shares[1]], '');
-console.log(result.success); // false — checksum mismatch detected
+const corrupted = { ...shares[0], share: shares[0].share.slice(0, -10) + 'XXXXXXXXXX' };
+try {
+  await reconstructSecret([corrupted, shares[1]], '');
+} catch (e) {
+  console.log(e instanceof IntegrityCheckError); // true
+}
 
 // Mix shares from two different sets
-const otherShares = await splitSecret('other-secret', 3, 2, '', 'other');
-const mixed = await reconstructSecret([shares[0], otherShares[1]], '');
-console.log(mixed.success); // false — family ID mismatch
-console.log(mixed.error);   // "All shares must belong to the same set."
+const otherShares = await splitSecret('other-secret', 3, 2, { comment: 'other' });
+try {
+  await reconstructSecret([shares[0], otherShares[1]], '');
+} catch (e) {
+  console.log(e instanceof SetMismatchError); // true
+}
 ```
 
 ---
@@ -278,15 +369,13 @@ By default the module logs nothing. Inject a logger to trace cryptographic opera
 ```js
 import { setLogger, splitSecret } from '@midnightlogic/piecekeeper-crypto';
 
-// Route engine logs to your application's logger
 setLogger({
   info:  (...args) => console.log('[PK]', ...args),
   warn:  (...args) => console.warn('[PK]', ...args),
   error: (...args) => console.error('[PK]', ...args),
 });
 
-// Now splitSecret() will emit detailed trace logs:
-const shares = await splitSecret('test', 3, 2, '', '');
+const shares = await splitSecret('test', 3, 2);
 // [PK] [Engine] Forging polynomial share 1/3 (x-intercept: 1)
 // [PK] [Engine] Forging polynomial share 2/3 (x-intercept: 2)
 // [PK] [Engine] Forging polynomial share 3/3 (x-intercept: 3)
@@ -296,7 +385,7 @@ const shares = await splitSecret('test', 3, 2, '', '');
 
 ## API Reference
 
-### `splitSecret(secret, n, k, encryptionKey?, comment?, isStealth?, schemaVersion?)`
+### `splitSecret(secret, n, k, options?)`
 
 Splits a secret into `n` shares with threshold `k`.
 
@@ -305,12 +394,26 @@ Splits a secret into `n` shares with threshold `k`.
 | `secret` | `string` | — | The secret text to split (max 250 UTF-8 bytes). |
 | `n` | `number` | — | Total shares to generate (1–64). |
 | `k` | `number` | — | Minimum threshold for reconstruction. |
-| `encryptionKey` | `string` | `''` | AES encryption password. Pass `''` for no encryption. |
-| `comment` | `string` | `''` | Metadata comment embedded in each share (max 32 chars). |
-| `isStealth` | `boolean` | `false` | Force uniform 2048-bit shares. |
-| `schemaVersion` | `string \| null` | `'4'` | KDF schema key. See `listSchemas()`. |
+| `options` | `SplitOptions` | `{}` | See [Options Object](#splitsecret-options-object). |
 
-**Returns:** `Promise<Array<{ ShareIndex, Share, Comment, Timestamp, Version, IsEncrypted }>>`
+**Returns:** `Promise<Array<{ shareIndex, share, comment, timestamp, version, isEncrypted }>>`
+
+**Throws:** `SecretEmptyError`, `SecretTooLongError`, `ThresholdExceededError`, `ValidationError`, `EncryptionKeyTooLongError`
+
+---
+
+### `reconstructSecret(sharesInput, encryptionKey?)`
+
+Reconstructs the original secret from `k` or more shares. **Throws on failure** (never returns `{ success: false }`).
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `sharesInput` | `Array<{ share: string }>` | — | Array of share objects. |
+| `encryptionKey` | `string` | `''` | Decryption password (or `''` for unencrypted). |
+
+**Returns:** `Promise<{ secret: string, metadata: { comment, timestamp, version, kdfSchema, familyId, n, k } }>`
+
+**Throws:** `PasswordRequiredError`, `WrongPasswordError`, `InsufficientSharesError`, `SetMismatchError`, `IntegrityCheckError`, `CorruptedShareError`
 
 ---
 
@@ -322,20 +425,7 @@ Extracts metadata from a share without decrypting it.
 |---|---|---|
 | `shareBase64` | `string` | The Base64URL-encoded share string. |
 
-**Returns:** `ShareMetadata` — `{ isValid, version, familyId, comment, timestamp, isEncrypted, isStealth, primeIndex, kdfSchema, payload, aadBytes, error? }`
-
----
-
-### `reconstructSecret(sharesInput, encryptionKey?)`
-
-Reconstructs the original secret from `k` or more shares.
-
-| Parameter | Type | Default | Description |
-|---|---|---|---|
-| `sharesInput` | `Array<{ Share: string }>` | — | Array of share objects. |
-| `encryptionKey` | `string \| null` | `null` | Decryption password (or `''`/`null` for unencrypted). |
-
-**Returns:** `Promise<{ success, secret?, error?, metadata? }>`
+**Returns:** `{ isValid, version, familyId, comment, timestamp, isEncrypted, isStealth, primeIndex, kdfSchema, payload, aadBytes, error? }`
 
 ---
 
@@ -356,6 +446,7 @@ Reconstructs the original secret from `k` or more shares.
 | `MAX_SHARES` | Max shares per split (64). |
 | `APP_CONFIG` | Full configuration object (advanced use). |
 | `setLogger(logger)` | Injects a custom `{ info, warn, error }` logger. |
+| `PieceKeeperError`, ... | See [Typed Error Handling](#typed-error-handling). |
 
 ---
 

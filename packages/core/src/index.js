@@ -24,6 +24,18 @@ export { newRandomPolynomial, invokePolynomial } from './shamir.js';
 // --- Configuration ---
 export { APP_CONFIG } from './config.js';
 
+// --- Typed Errors ---
+export {
+    PieceKeeperError,
+    ValidationError, SecretEmptyError, SecretTooLongError,
+    ThresholdExceededError, EncryptionKeyTooLongError,
+    ShareFormatError, InvalidBase64Error, UnsupportedVersionError, CorruptedShareError,
+    ReconstructionError, InsufficientSharesError, SetMismatchError,
+    IntegrityCheckError, PasswordRequiredError,
+    DecryptionError, WrongPasswordError, DataTooShortError,
+    SchemaError, UnknownSchemaError,
+} from './errors.js';
+
 // --- Schema Discovery Helpers ---
 
 import { APP_CONFIG } from './config.js';

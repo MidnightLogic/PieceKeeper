@@ -1,5 +1,5 @@
 /**
- * @midnightlogic/piecekeeper-crypto — Core Test Suite
+ * @midnightlogic/piecekeeper-crypto — Core Test Suite (v2.0.0)
  *
  * Isolated tests that validate SSS math, encryption, and reconstruction
  * without any DOM, browser, or PWA dependencies.
@@ -19,6 +19,19 @@ import {
     modularInverse,
     bigIntToBytes,
     bytesToBigInt,
+    // Typed errors
+    PieceKeeperError,
+    SecretEmptyError,
+    SecretTooLongError,
+    ThresholdExceededError,
+    EncryptionKeyTooLongError,
+    InsufficientSharesError,
+    SetMismatchError,
+    IntegrityCheckError,
+    PasswordRequiredError,
+    WrongPasswordError,
+    ValidationError,
+    InvalidBase64Error,
 } from '../src/index.js';
 
 // Inject a test-friendly logger
@@ -94,88 +107,133 @@ describe('inspectShare', () => {
         expect(result.isValid).toBe(false);
         expect(result.error).toContain('Unsupported share format');
     });
+
+    it('throws InvalidBase64Error for non-Base64 input', () => {
+        expect(() => inspectShare('!!!not-base64!!!')).toThrow(InvalidBase64Error);
+    });
 });
 
 // ── Shamir's Secret Sharing ─────────────────────────────────────────────
 
 describe('Shamir Secret Sharing — Unencrypted', () => {
     it('Basic 3-of-5: generates 5 shares and reconstructs with any 3', async () => {
-        const shares = await splitSecret('MySimplePassword123', 5, 3, '', 'Test Comment 1');
+        const shares = await splitSecret('MySimplePassword123', 5, 3, { comment: 'Test Comment 1' });
         expect(shares).toHaveLength(5);
 
+        // Verify camelCase return shape
+        expect(shares[0]).toHaveProperty('shareIndex');
+        expect(shares[0]).toHaveProperty('share');
+        expect(shares[0]).toHaveProperty('comment');
+        expect(shares[0]).toHaveProperty('timestamp');
+        expect(shares[0]).toHaveProperty('version');
+        expect(shares[0]).toHaveProperty('isEncrypted');
+
         // Reconstruct with first 3 shares
-        const recon1 = await reconstructSecret(shares.slice(0, 3), '');
-        expect(recon1.success).toBe(true);
-        expect(recon1.secret).toBe('MySimplePassword123');
-        expect(recon1.metadata.note).toBe('Test Comment 1');
+        const result = await reconstructSecret(shares.slice(0, 3));
+        expect(result.secret).toBe('MySimplePassword123');
+        expect(result.metadata.comment).toBe('Test Comment 1');
 
         // Reconstruct with non-adjacent shares [1, 3, 5]
-        const recon2 = await reconstructSecret([shares[0], shares[2], shares[4]], '');
-        expect(recon2.success).toBe(true);
-        expect(recon2.secret).toBe('MySimplePassword123');
+        const result2 = await reconstructSecret([shares[0], shares[2], shares[4]]);
+        expect(result2.secret).toBe('MySimplePassword123');
     });
 
-    it('Fails with insufficient shares (2 of 3 needed)', async () => {
-        const shares = await splitSecret('MySimplePassword123', 5, 3, '', 'Test');
-        const recon = await reconstructSecret(shares.slice(0, 2), '');
-        expect(recon.success).toBe(false);
+    it('Throws InsufficientSharesError with too few shares (2 of 3 needed)', async () => {
+        const shares = await splitSecret('MySimplePassword123', 5, 3, { comment: 'Test' });
+        await expect(reconstructSecret(shares.slice(0, 2))).rejects.toThrow(InsufficientSharesError);
     });
 
     it('Edge case: k=1 (single share reconstruction)', async () => {
-        const shares = await splitSecret('k_is_one', 2, 1, '', 'k=1 test');
-        const r = await reconstructSecret([shares[1]], '');
-        expect(r.success).toBe(true);
+        const shares = await splitSecret('k_is_one', 2, 1, { comment: 'k=1 test' });
+        const r = await reconstructSecret([shares[1]]);
         expect(r.secret).toBe('k_is_one');
     });
 
     it('UTF-8 special characters survive round-trip', async () => {
         const secret = '🔑 αβγ ✅ € ™ 你好 π≈3.14';
-        const shares = await splitSecret(secret, 4, 2, '', 'UTF8');
-        const r = await reconstructSecret(shares.slice(0, 2), '');
-        expect(r.success).toBe(true);
+        const shares = await splitSecret(secret, 4, 2, { comment: 'UTF8' });
+        const r = await reconstructSecret(shares.slice(0, 2));
         expect(r.secret).toBe(secret);
     });
 
-    it('Duplicate shares are de-duplicated (not enough unique shares)', async () => {
-        const shares = await splitSecret('DuplicateTest', 3, 3, '', 'Dup Test');
-        const r = await reconstructSecret([shares[0], shares[0], shares[1]], '');
-        expect(r.success).toBe(false);
+    it('Duplicate shares are de-duplicated (throws InsufficientSharesError)', async () => {
+        const shares = await splitSecret('DuplicateTest', 3, 3, { comment: 'Dup Test' });
+        await expect(
+            reconstructSecret([shares[0], shares[0], shares[1]])
+        ).rejects.toThrow(InsufficientSharesError);
     });
 
-    it('Mismatched family IDs are rejected', async () => {
-        const sharesA = await splitSecret('SecretA', 3, 2, '', 'Set A');
-        const sharesB = await splitSecret('SecretB', 3, 2, '', 'Set B');
-        const r = await reconstructSecret([sharesA[0], sharesB[1]], '');
-        expect(r.success).toBe(false);
+    it('Mismatched family IDs throw SetMismatchError', async () => {
+        const sharesA = await splitSecret('SecretA', 3, 2, { comment: 'Set A' });
+        const sharesB = await splitSecret('SecretB', 3, 2, { comment: 'Set B' });
+        await expect(
+            reconstructSecret([sharesA[0], sharesB[1]])
+        ).rejects.toThrow(SetMismatchError);
     });
 
-    it('Corrupted share data is detected', async () => {
-        const shares = await splitSecret('CorruptTest', 3, 2, '', 'Corrupt');
-        const corruptedStr = shares[0].Share.substring(0, shares[0].Share.length - 10) + '!!!!!!!!';
-        const r = await reconstructSecret([{ ShareIndex: 1, Share: corruptedStr }, shares[1]], '');
-        expect(r.success).toBe(false);
+    it('Corrupted share data throws an error', async () => {
+        const shares = await splitSecret('CorruptTest', 3, 2, { comment: 'Corrupt' });
+        const corruptedStr = shares[0].share.substring(0, shares[0].share.length - 10) + '!!!!!!!!';
+        await expect(
+            reconstructSecret([{ shareIndex: 1, share: corruptedStr }, shares[1]])
+        ).rejects.toThrow(PieceKeeperError);
+    });
+});
+
+// ── Typed Error Validation ──────────────────────────────────────────────
+
+describe('Typed Error Validation', () => {
+    it('Throws SecretEmptyError for empty secret', async () => {
+        await expect(splitSecret('', 3, 2)).rejects.toThrow(SecretEmptyError);
+    });
+
+    it('Throws ThresholdExceededError when k > n', async () => {
+        await expect(splitSecret('test', 2, 5)).rejects.toThrow(ThresholdExceededError);
+    });
+
+    it('Throws ValidationError when k < 1', async () => {
+        await expect(splitSecret('test', 3, 0)).rejects.toThrow(ValidationError);
+    });
+
+    it('Throws ValidationError for empty shares array', async () => {
+        await expect(reconstructSecret([])).rejects.toThrow(ValidationError);
+    });
+
+    it('Error codes are machine-readable strings', async () => {
+        try {
+            await splitSecret('test', 2, 5);
+        } catch (e) {
+            expect(e.code).toBe('THRESHOLD_EXCEEDED');
+            expect(e.n).toBe(2);
+            expect(e.k).toBe(5);
+        }
     });
 });
 
 // ── Encrypted Shares ────────────────────────────────────────────────────
 
 describe('Shamir Secret Sharing — Encrypted (PBKDF2)', () => {
-    it('Encrypted 2-of-3: fails without password, succeeds with correct password', async () => {
+    it('Encrypted 2-of-3: throws without password, succeeds with correct password', async () => {
         // Use schema '2' (fast PBKDF2) to keep tests quick
-        const shares = await splitSecret('Another!@#Secret', 3, 2, 'myEncKey123', 'Encrypted Test', false, '2');
+        const shares = await splitSecret('Another!@#Secret', 3, 2, {
+            encryptionKey: 'myEncKey123',
+            comment: 'Encrypted Test',
+            schema: '2',
+        });
 
-        // Fails without password
-        const r1 = await reconstructSecret(shares.slice(0, 2), '');
-        expect(r1.success).toBe(false);
+        // Throws PasswordRequiredError without password
+        await expect(
+            reconstructSecret(shares.slice(0, 2))
+        ).rejects.toThrow(PasswordRequiredError);
 
-        // Fails with wrong password
-        const r2 = await reconstructSecret(shares.slice(0, 2), 'wrongKey');
-        expect(r2.success).toBe(false);
+        // Throws WrongPasswordError with wrong password
+        await expect(
+            reconstructSecret(shares.slice(0, 2), 'wrongKey')
+        ).rejects.toThrow(WrongPasswordError);
 
         // Succeeds with correct password
-        const r3 = await reconstructSecret(shares.slice(0, 2), 'myEncKey123');
-        expect(r3.success).toBe(true);
-        expect(r3.secret).toBe('Another!@#Secret');
+        const result = await reconstructSecret(shares.slice(0, 2), 'myEncKey123');
+        expect(result.secret).toBe('Another!@#Secret');
     });
 });
 
@@ -212,5 +270,56 @@ describe('deriveKey', () => {
         const key1 = await deriveKey('determinism', salt, schema);
         const key2 = await deriveKey('determinism', salt, schema);
         expect(key1).toEqual(key2);
+    });
+});
+
+// ── Options Object & kdfOverrides ───────────────────────────────────────
+
+describe('splitSecret Options Object', () => {
+    it('Works with no options (defaults)', async () => {
+        const shares = await splitSecret('bare-minimum', 3, 2);
+        expect(shares).toHaveLength(3);
+        expect(shares[0].isEncrypted).toBe(false);
+        expect(shares[0].comment).toBe('');
+    });
+
+    it('Stealth mode produces uniform-length shares', async () => {
+        const normal = await splitSecret('short', 3, 2, { comment: 'normal' });
+        const stealth = await splitSecret('short', 3, 2, { stealth: true, comment: 'stealth' });
+        // Stealth shares should be significantly longer (2048-bit prime)
+        expect(stealth[0].share.length).toBeGreaterThan(normal[0].share.length);
+    });
+
+    it('kdfOverrides are accepted and do not break unencrypted flow', async () => {
+        // kdfOverrides has no effect on unencrypted shares (no KDF is invoked),
+        // but verifies the option is accepted without error.
+        const shares = await splitSecret('override-test', 3, 2, {
+            comment: 'kdf-override',
+            schema: '2',
+            kdfOverrides: { pbkdf2_iterations: 10000 },
+        });
+        expect(shares).toHaveLength(3);
+
+        const result = await reconstructSecret(shares.slice(0, 2));
+        expect(result.secret).toBe('override-test');
+    });
+
+    it('kdfOverrides with encryption changes the derived key', async () => {
+        // This verifies the override actually takes effect: encrypting with
+        // non-default iterations produces shares that CANNOT be reconstructed
+        // using the base schema (because the header schema ID still says '2').
+        const shares = await splitSecret('override-enc', 3, 2, {
+            encryptionKey: 'pass',
+            schema: '2',
+            kdfOverrides: { pbkdf2_iterations: 10000 },
+        });
+        expect(shares).toHaveLength(3);
+        expect(shares[0].isEncrypted).toBe(true);
+
+        // Reconstruction with the correct password BUT base schema iterations
+        // will fail (WrongPasswordError) — proving the override took effect.
+        await expect(
+            reconstructSecret(shares.slice(0, 2), 'pass')
+        ).rejects.toThrow(WrongPasswordError);
     });
 });

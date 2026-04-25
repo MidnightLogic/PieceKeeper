@@ -127,7 +127,7 @@ export const renderGeneratedSharesToUI = (shares, k) => {
             let displayTimestamp = 'Unknown';
             let displayEncrypted = false;
             try {
-                const meta = inspectShare(s.Share);
+                const meta = inspectShare(s.share);
                 if (meta.isValid) {
                     displayFamilyId = meta.familyId;
                     displayComment = meta.comment || 'None';
@@ -137,9 +137,9 @@ export const renderGeneratedSharesToUI = (shares, k) => {
             } catch { /* Ignore parsing errors for display */ }
 
             return buildShareCardHTML({
-                shareIndex: s.ShareIndex,
-                shareString: s.Share,
-                version: s.Version || '1',
+                shareIndex: s.shareIndex,
+                shareString: s.share,
+                version: s.version || '1',
                 familyId: displayFamilyId,
                 comment: displayComment,
                 timestamp: displayTimestamp,
@@ -169,11 +169,11 @@ export const renderGeneratedSharesToUI = (shares, k) => {
                 const X_SVG = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
 
                 if (button.classList.contains('copy-btn')) {
-                    copyToClipboard(shareObject.Share, `Share ${shareObject.ShareIndex}`).then(ok => {
+                    copyToClipboard(shareObject.share, `Share ${shareObject.shareIndex}`).then(ok => {
                         if (ok) flashButton(button, TICK_SVG, 'emerald', 1200);
                     });
                 } else if (button.classList.contains('qr-btn')) {
-                    showQRCode(shareObject.Share);
+                    showQRCode(shareObject.share);
                 } else if (button.classList.contains('print-single-btn')) {
                     printSingleShare(shareObject);
                 } else if (button.classList.contains('email-single-btn')) {
@@ -183,7 +183,7 @@ export const renderGeneratedSharesToUI = (shares, k) => {
                         flashButton(button, X_SVG, 'slate', 1200);
                         try { if (navigator.vibrate) navigator.vibrate([30, 30, 30]); } catch (_) {}
                     } else {
-                        requestNfcPermission(() => { startNfcMintingFlow([shareObject.Share]); });
+                        requestNfcPermission(() => { startNfcMintingFlow([shareObject.share]); });
                     }
                 }
             });

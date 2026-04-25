@@ -4,6 +4,9 @@
  * This file runs INSIDE a Web Worker context.
  * It imports the core crypto package and delegates heavy operations
  * (KDF, share generation, reconstruction, decryption) off the main thread.
+ *
+ * Error identity (name, code, message) is preserved across the postMessage boundary
+ * so the bridge can reconstruct typed PieceKeeperError subclasses.
  */
 
 import {
@@ -35,6 +38,13 @@ self.onmessage = async (event) => {
         }
         self.postMessage({ id, success: true, result });
     } catch (error) {
-        self.postMessage({ id, success: false, error: error.message });
+        // Preserve typed error identity for the bridge to reconstruct
+        self.postMessage({
+            id,
+            success: false,
+            error: error.message,
+            errorCode: error.code || null,
+            errorName: error.name || 'Error',
+        });
     }
 };

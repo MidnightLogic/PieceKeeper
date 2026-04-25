@@ -95,7 +95,7 @@ npm install @midnightlogic/piecekeeper-crypto
 ```js
 import { splitSecret } from '@midnightlogic/piecekeeper-crypto';
 
-const shares = await splitSecret('my-secret-password', 5, 3, '', 'backup-key');
+const shares = await splitSecret('my-secret-password', 5, 3, { comment: 'backup-key' });
 // → 5 shares, any 3 can reconstruct
 ```
 
@@ -113,7 +113,7 @@ console.log(result.secret); // "my-secret-password"
 ```js
 import { inspectShare } from '@midnightlogic/piecekeeper-crypto';
 
-const meta = inspectShare(shares[0].Share);
+const meta = inspectShare(shares[0].share);
 console.log(meta.isEncrypted); // false
 console.log(meta.familyId);    // "a1b2c3d4"
 ```

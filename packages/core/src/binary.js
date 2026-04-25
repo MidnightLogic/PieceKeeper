@@ -8,6 +8,7 @@
  */
 
 import { APP_CONFIG } from './config.js';
+import { InvalidBase64Error } from './errors.js';
 
 const PRIME_TABLE = APP_CONFIG.PRIME_TABLE;
 
@@ -78,7 +79,7 @@ export const inspectShare = (shareBase64) => {
     try {
         bytes = base64ToBytes(shareBase64);
     } catch (e) {
-        throw new Error('Invalid Base64 encoding in share.');
+        throw new InvalidBase64Error();
     }
 
     try {
