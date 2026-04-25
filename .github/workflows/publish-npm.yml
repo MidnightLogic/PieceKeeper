@@ -3,12 +3,12 @@ name: Publish to NPM
 on:
   release:
     types: [published]
+  workflow_dispatch: # <-- THE ESCAPE HATCH
 
 jobs:
   publish:
     runs-on: ubuntu-latest
 
-    # CRITICAL: This block grants the server permission to request the OIDC token from GitHub
     permissions:
       contents: read
       id-token: write 
@@ -21,7 +21,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20.x'
-          # We intentionally omit registry-url so NPM uses OIDC instead of a token
+          # Absolutely NO registry-url here
 
       - name: Install Dependencies
         run: npm ci
