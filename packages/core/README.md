@@ -14,7 +14,7 @@ Split any secret into `n` shares with a configurable threshold `k` — the secre
 
 - **Shamir's Secret Sharing (SSS)** — 5-tier dynamic prime resolution (128-bit to 2048-bit Galois Fields).
 - **AES-256-GCM** — Authenticated encryption with AEAD for optional two-factor password protection.
-- **Memory-Hard KDFs** — Argon2id, scrypt, and PBKDF2 via [hash-wasm](https://github.com/nicolo-ribaudo/nicolo-ribaudo) (zero native dependencies).
+- **Memory-Hard KDFs** — Argon2id, scrypt, and PBKDF2 via [hash-wasm](https://github.com/Daninet/hash-wasm) (zero native dependencies).
 - **Isomorphic** — Works identically in Node.js 18+ and all modern browsers. Ships ESM, CJS, and full TypeScript declarations.
 - **Stealth Mode** — Forces uniform 2048-bit shares that reveal nothing about the secret's actual size.
 - **Integrity Checksums** — SHA-256 truncated checksums detect corrupted or tampered shares during reconstruction.
