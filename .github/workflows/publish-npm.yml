@@ -20,7 +20,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '24.x'  # Upgrades to Node 24 (includes npm 11+)
+          node-version: '24.x'
           registry-url: 'https://registry.npmjs.org'
 
       - name: Install Dependencies
@@ -30,8 +30,6 @@ jobs:
         run: npm run build
         working-directory: ./packages/core
 
-      # Notice there is no 'env: NODE_AUTH_TOKEN' here anymore!
-      # We also add --provenance, which gives your package a fancy verified badge on NPM.
       - name: Publish to NPM
         run: npm publish --access public --provenance
         working-directory: ./packages/core
