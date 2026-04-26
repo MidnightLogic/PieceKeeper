@@ -17,6 +17,12 @@ Shares can be distributed as printable **QR codes**, written to **NFC tags**, or
 
 ---
 
+<div align="center">
+  <img src="packages/pwa/src/assets/demo.gif" alt="PieceKeeper">
+</div>
+
+---
+
 ## 📦 Monorepo Architecture
 
 This repository is structured as an NPM workspace containing two packages:
