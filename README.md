@@ -15,8 +15,6 @@ PieceKeeper allows you to take a sensitive secret—like a master password, cryp
 
 Shares can be distributed as printable **QR codes**, written to **NFC tags**, or saved as plain **text**. An optional two-factor password adds a second layer of protection so that physical possession of shares alone is not sufficient to decode the secret.
 
----
-
 <div align="center">
   <img src="packages/pwa/src/assets/demo.gif" alt="PieceKeeper">
 </div>
